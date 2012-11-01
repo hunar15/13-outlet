@@ -2,18 +2,34 @@
 /*
  * GET home page.
  */
-var mysql      = require('mysql');
+var mysql      = require('mysql'),
+	restock = require('../models/requests');
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
   password : '',
   database : 'outletdb'
 });
-var http = require('request'),
+var request = require('request'),
 	hq_host = 'http://localhost:3001';
 
 exports.index = function(req, res){
   res.render('index', { title: 'Express' });
+};
+
+exports.setAsReceived = function(req,res) {
+	restock.setAsReceived(req.body,function(err, rows){
+		if(!err) {
+			res.send(rows);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncRequests = function (req, res) {
+	// body...
+	restock.syncRequests();
 };
 
 exports.syncWithHQ = function(req, res) {
