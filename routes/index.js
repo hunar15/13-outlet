@@ -121,6 +121,15 @@ exports.processTransaction = function (req, res) {
 					console.log( "Error in processing " + itemList[i]['barcode']);
 				} else {
 					console.log( itemList[i]['barcode'] + " deducted");
+					var trans_query = "INSERT INTO transaction(cashier_id,unit_sold,date,barcode) VALUES"+
+										"("+req.body.cashier+","+itemList[i]['quantity']+",NOW(),"+itemList[i]['barcode']+");";
+					connection.query(trans_query, function(err,rows,fields) {
+						if(!err) {
+							console.log("Transaction logged");
+						} else {
+							console.log(err);
+						}
+					});
 				}
 			});
 		}
