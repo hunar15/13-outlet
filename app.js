@@ -30,7 +30,7 @@ app.configure('development', function(){
 app.get('/', routes.index);
 app.get('/users', user.list);
 
-app.post('/syncdb', routes.syncWithHQ);
+app.post('/syncWithHQ', routes.syncWithHQ);
 app.post('/syncRevenue', routes.syncRevenue);
 app.post('/processTransaction', routes.processTransaction);
 
