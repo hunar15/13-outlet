@@ -141,7 +141,7 @@ function updateReceivedRequests(callback) {
 								console.log("Error in updating outletdb requests");
 							}
 							//All done!
-							callback(err);
+							callback(err, rows2);
 						});
 					}
 				}
@@ -165,25 +165,35 @@ exports.syncRequests = function (args, callback) {
 
 	connection.query(query, function(err, rows, fields) {
 		if(!err) {
-			console.log(rows);
-			request.post({ url: hq_host+'/syncAddedRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows}}, function(error,response,body) {
-				if(!error) {
-					if( body.status == "ADDED") {
-						var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
-						connection.query(query_update, function(err,rows2,fields2) {
-							if(!err) {
-								console.log("New Requests Synced");
-							} else {
-								console.log("Error in updating outletdb requests");
+			console.log(rows.length);
+			for( var i in rows) {
+				var current = rows[i];
+				var query2 = "SELECT * FROM request_details WHERE request_id="+current['request_id']+";";
+				connection.query(query2, function(err, rows2, fields2) {
+					request.post({ url: hq_host+'/syncAddedRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows2}}, function(error,response,body) {
+						if(!error) {
+							if( body.status == "ADDED") {
+								var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
+								connection.query(query_update, function(err,rows2,fields2) {
+									if(!err) {
+										console.log("New Requests Synced");
+									} else {
+										console.log("Error in updating outletdb requests");
+									}
+									//update RECEIVED requests
+									if(i == (rows.length -1 )) {
+										console.log("Syncing RECEIVED requests");
+										updateReceivedRequests(callback);
+									}
+								});
 							}
-							//update RECEIVED requests
-							updateReceivedRequests(callback);
-						});
-					}
-				} else {
-					console.log("Error in connecting to the server");
-				}
-			});
+						} else {
+							console.log("Error in connecting to the server");
+						}
+					});
+				});
+			}
+			
 		} else {
 			console.log(err);
 		}
