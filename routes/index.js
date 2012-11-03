@@ -29,7 +29,9 @@ exports.setAsReceived = function(req,res) {
 
 exports.syncRequests = function (req, res) {
 	// body...
-	restock.syncRequests();
+	restock.syncRequests(function (err, result) {
+		res.send(result);
+	});
 };
 
 function syncDeleted( outletid) {
@@ -132,12 +134,32 @@ exports.syncRevenue = function (req, res) {
 	}
 };
 
+var t_errorFlag = 0;
+function callTransactionQuery(query, current) {
+	connection.query(query, function (err, rows) {
+		if (err!== null) {
+			t_errorFlag = 1;
+			console.log( "Error in processing " + current['barcode']);
+		} else {
+			console.log( current['barcode'] + " deducted");
+			var trans_query = "INSERT INTO transaction(cashier_id,unit_sold,date,barcode) VALUES"+
+								"("+req.body.cashier+","+current['quantity']+",NOW(),"+current['barcode']+");";
+			connection.query(trans_query, function(err,rows,fields) {
+				if(!err) {
+					console.log("Transaction logged");
+				} else {
+					console.log(err);
+				}
+			});
+		}
+	});
+}
+
 exports.processTransaction = function (req, res) {
 	// body...
-
+	t_errorFlag =0;
 	//first error check : do the required arguments exist
 	var itemList = req.body.values,
-		errorFlag = 0,
 		result = {};
 	result['cashier'] = req.body.cashier;
 	if (itemList !== null) {
@@ -151,27 +173,12 @@ exports.processTransaction = function (req, res) {
 		}
 		*/
 		for (var i in itemList) {
+			var current = itemList[i];
 			var query = "UPDATE inventory SET quantity= quantity -" +itemList[i]['quantity'];
 			query += " WHERE barcode=" + itemList[i]['barcode'] +" ;";
-			connection.query(query, function (err, rows) {
-				if (err!== null) {
-					errorFlag = 1;
-					console.log( "Error in processing " + itemList[i]['barcode']);
-				} else {
-					console.log( itemList[i]['barcode'] + " deducted");
-					var trans_query = "INSERT INTO transaction(cashier_id,unit_sold,date,barcode) VALUES"+
-										"("+req.body.cashier+","+itemList[i]['quantity']+",NOW(),"+itemList[i]['barcode']+");";
-					connection.query(trans_query, function(err,rows,fields) {
-						if(!err) {
-							console.log("Transaction logged");
-						} else {
-							console.log(err);
-						}
-					});
-				}
-			});
+			callTransactionQuery(query,current);
 		}
-		if (errorFlag == 1) {
+		if (t_errorFlag == 1) {
 			console.log("Bill processed with errors");
 			result['errors'] = true;
 		} else{
@@ -181,6 +188,7 @@ exports.processTransaction = function (req, res) {
 		}
 		res.send(result);
 	} else {
-		res.send('Absent parameters');
+		console.log("Absent parameters");
+		res.send({error:true});
 	}
 };
