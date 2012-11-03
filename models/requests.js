@@ -13,9 +13,22 @@ exports.viewRequests = function  (callback) {
 	// body...
 
 	var query = 'select * FROM batch_request;';
+	var result = {};
+	result['metadata'] = [];
+	result['data']= [];
+
+	result['metadata'].push({"name":"request_id","label":"Request ID", "datatype" : "integer","editable":"false"});
+	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date","editable":"false"});
+	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "true"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
 		if(!err) {
+			for( var i in rows) {
+				var current ={};
+				current['id'] = rows[i]['request_id'];
+				current['values'] = rows[i];
+				result['data'].push(current);
+			}
 			callback(err,rows);
 		} else {
 			console.log(err);
