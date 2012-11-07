@@ -94,6 +94,39 @@ exports.getInventory =  function(callback) {
 	});
 };
 
+exports.getPrice = function(args, callback) {
+	/*
+
+	{
+		cashier : "",
+		barcode : ""
+	}
+	*/
+	var cashier = args.cashier,
+		barcode = args.barcode,
+		result ={};
+	
+	if(cashier!== null && barcode !== null) {
+		var query = 'SELECT selling_price from inventory WHERE barcode=' + barcode + ';';
+		connection.query(query, function(err, rows, fields) {
+			if((err === null)) {
+				console.log("Price of " + barcode + " successfully retrieved");
+				result['cashier'] = cashier;
+				result['barcode'] = barcode;
+				result['price'] = rows[0]['selling_price'];
+				console.log(result);
+				callback(null,result);
+			} else {
+				console.log("Error in processing query : " + err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or missing parameters");
+		callback(true,null);
+	}
+};
+
 
 
 

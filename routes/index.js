@@ -3,7 +3,8 @@
  * GET home page.
  */
 var mysql      = require('mysql'),
-	restock = require('../models/requests');
+	restock = require('../models/requests'),
+	inventory = require('../models/inventory');
 var connection = mysql.createConnection({
   host     : 'localhost',
   user     : 'root',
@@ -115,7 +116,7 @@ exports.syncWithHQ = function(req, res) {
 							flag = 1;
 						callQuery(flag,query,current, outletid);
 					}
-					//now sync all products to be deleted	
+					//now sync all products to be deleted
 					syncDeleted(outletid);
 				}
 			} );
@@ -155,6 +156,16 @@ function callTransactionQuery(query, current,cashier) {
 		}
 	});
 }
+
+exports.getPrice = function(req,res) {
+	inventory.getPrice(req.body, function(err, result){
+		if(err !== null) {
+			res.send(err);
+		} else {
+			res.send(result);
+		}
+	});
+};
 
 exports.processTransaction = function (req, res) {
 	// body...

@@ -31,10 +31,12 @@ app.get('/', routes.index);
 app.get('/users', user.list);
 app.get('/syncRequests', routes.syncRequests);
 
+
 app.post('/syncWithHQ', routes.syncWithHQ);
 app.post('/syncRevenue', routes.syncRevenue);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);
+app.post('/getPrice', routes.getPrice);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
