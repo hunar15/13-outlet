@@ -6,25 +6,6 @@ var connection = sql.createConnection({
   database : 'outletdb'
 });
 
-exports.getPrice = function( args, callback) {
-	/*
-	Required JSON Packet
-	{
-		cashier : "",
-		barcode : ""
-	}
-	*/
-	var barcode = args.barcode,
-		query = "SELECT selling_price as price FROM inventory WHERE barcode=" + barcode +";";
-
-	connection.query(query, function(err, rows, fields) {
-		if(!err) {
-			callback(err,rows);
-		} else {
-			console.log(err);
-		}
-	});
-};
 
 exports.getDiscontinued = function (callback) {
 	// body...
