@@ -137,7 +137,7 @@ exports.syncRevenue = function (req, res) {
 var t_errorFlag = 0;
 function callTransactionQuery(query, current) {
 	connection.query(query, function (err, rows) {
-		if (err!== null) {
+		if (err) {
 			t_errorFlag = 1;
 			console.log( "Error in processing " + current['barcode']);
 		} else {
