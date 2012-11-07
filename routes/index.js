@@ -135,15 +135,16 @@ exports.syncRevenue = function (req, res) {
 };
 
 var t_errorFlag = 0;
-function callTransactionQuery(query, current) {
+function callTransactionQuery(query, current,cashier) {
 	connection.query(query, function (err, rows) {
 		if (err!== null) {
 			t_errorFlag = 1;
+			console.log(err);
 			console.log( "Error in processing " + current['barcode']);
 		} else {
 			console.log( current['barcode'] + " deducted");
 			var trans_query = "INSERT INTO transaction(cashier_id,unit_sold,date,barcode) VALUES"+
-								"("+req.body.cashier+","+current['quantity']+",NOW(),"+current['barcode']+");";
+								"("+cashier+","+current['quantity']+",NOW(),"+current['barcode']+");";
 			connection.query(trans_query, function(err,rows,fields) {
 				if(!err) {
 					console.log("Transaction logged");
@@ -159,14 +160,15 @@ exports.processTransaction = function (req, res) {
 	// body...
 	t_errorFlag =0;
 	//first error check : do the required arguments exist
-	var itemList = req.body.values,
+	var itemList = req.body.list,
 		result = {};
 	result['cashier'] = req.body.cashier;
+	var cashier = result['cashier'];
 	if (itemList !== null) {
 		/*
 		{
 			cashier : "",
-			values : [{
+			list : [{
 				barcode : "",
 				quantity : ""
 			}]
@@ -174,9 +176,9 @@ exports.processTransaction = function (req, res) {
 		*/
 		for (var i in itemList) {
 			var current = itemList[i];
-			var query = "UPDATE inventory SET quantity= quantity -" +itemList[i]['quantity'];
+			var query = "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'];
 			query += " WHERE barcode=" + itemList[i]['barcode'] +" ;";
-			callTransactionQuery(query,current);
+			callTransactionQuery(query,current,cashier);
 		}
 		if (t_errorFlag == 1) {
 			console.log("Bill processed with errors");
