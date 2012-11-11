@@ -4,7 +4,7 @@ var config = require('../config/config');
 var connection = config.connection;
 var hq_host = config.hq_host,
 	outletid = config.outletid;
-	
+
 exports.viewRequests = function  (callback) {
 	// body...
 
@@ -35,33 +35,28 @@ exports.addRequest =  function(args, callback) {
 	//packet format
 	/*
 	{
-		requestList : [
-			{
-				barcode : "",
-				quantity : ""
-			}, ...
-		]
+		barcode : "",
+		quantity : ""
 	}
 	*/
-	var query = 'INSERT INTO batch_request(date,status) VALUES(NOW(),\'ADDING\');',
-		requestList = args.requestList;
+	//check if current date order tuple exists in the db
+	var query = 'INSERT INTO batch_request(date,status) SELECT CURDATE(),\'ADDED\' FROM DUAL WHERE ' +
+				'NOT EXISTS(SELECT * FROM batch_request WHERE date=CURDATE());';
+		barcode = args.barcode,
+		quantity = args.quantity;
 
 	if (requestList !== null) {
 		connection.query( query,  function(err, rows, fields) {
 			if(!err) {
 				var errorFlag = 0,
-					request_id = rows.insertId,
 					query_2 = '';
-				console.log("Request no."+ rows.insertId+ " added in Batch");
-				for(var i in requestList) {
-					var current = requestList[i];
-					query_2 += "INSERT INTO request_details VALUES("+request_id+
-							"," + current['barcode']+"," + current['quantity']+ ");";
-				}
+				
+				query_2 += "INSERT INTO request_details VALUES(CURDATE()," + barcode+"," + quantity+ ");";
 
 				//execute multiple queries
 				connection.query(query_2, function (err2, rows2, fields2) {
 					if(!err2) {
+						console.log("Request for "+ quantity+ " items of "+ barcode+ " added to the list");
 					} else {
 						errorFlag = 1;
 						console.log(err2);
@@ -69,18 +64,10 @@ exports.addRequest =  function(args, callback) {
 					}
 					if (errorFlag === 0) {
 						console.log("Request successfully added");
-						query = "UPDATE batch_request SET status=\'ADDED\' WHERE request_id="+request_id+";";
-						connection.query(query, function(err3, rows3, fields3) {
-							if(!err3) {
-								console.log("Request successfully added");
-								callback(err3,rows3);
-							}
-							else
-								console.log("Final addition failed");
-								callback(err3);
-						});
+						callback(null,true);
 					} else {
 						console.log("Errors encountered while adding request details");
+						callback(true,null);
 					}
 				});
 			} else {
@@ -99,19 +86,21 @@ exports.deleteRequest = function (args, callback) {
 			request_id : ""
 		}
 	*/
-	var request_id = args.request_id;
+	var date = args.date;
 	if(request_id !== null) {
-		var query = 'UPDATE batch_request SET status =\'CANCELLED\' WHERE request_id='+request_id+';';
+		var query = 'UPDATE batch_request SET status =\'CANCELLED\' WHERE date='+date+';';
 		connection.query( query, function (err, rows, fields) {
 		// body...
 			if(!err) {
 				console.log("Request successfully cancelled");
+				callback(null,true);
 			} else {
 				console.log(err);
+				callback(true,null);
 			}
 		});
 	} else {
-		console("Invalid or absent parameters");
+		console.log("Invalid or absent parameters");
 	}
 	
 };
@@ -122,8 +111,8 @@ exports.setAsReceived = function(args, callback) {
 		request_id : ""
 	}
 	*/
-	var request_id = args.request_id,
-		query = "UPDATE batch_request SET status=\'RECEIVED\' WHERE request_id=" + request_id + ";";
+	var date = args.date,
+		query = "UPDATE batch_request SET status=\'RECEIVED\' WHERE date=" + date + ";";
 
 	connection.query(query, function (err, rows, fields) {
 		// body...
@@ -137,7 +126,7 @@ exports.setAsReceived = function(args, callback) {
 };
 
 function updateReceivedRequests(callback) {
-	var query = "SELECT * FROM batch_request WHERE status=\'RECEIVED\';";
+	var query = "SELECT DATE(date) as date, status FROM batch_request WHERE status=\'RECEIVED\';";
 	console.log("Updating RECEIVED requests..");
 	connection.query(query, function(err,rows, fields) {
 		if(!err) {
@@ -158,7 +147,7 @@ function updateReceivedRequests(callback) {
 						});
 					}
 				} else {
-					console.log(error);
+					console.log("Unable to sync with HQ\nError : " + error);
 					callback(error);
 				}
 			});
@@ -166,32 +155,6 @@ function updateReceivedRequests(callback) {
 			console.log("Errors in retrieving RECEIVED stock requests");
 			callback(err);
 		}
-	});
-}
-
-function callSyncAddedQuery(query, current, callback, i, len) {
-	connection.query(query, function(err, rows2, fields2) {
-		request.post({ url: hq_host+'/syncAddedRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows2}}, function(error,response,body) {
-			if(!error) {
-				if( body.status == "ADDED") {
-					var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\' AND request_id="+current['request_id']+";";
-					connection.query(query_update, function(err,rows2,fields2) {
-						if(!err) {
-							console.log("New Requests Synced");
-						} else {
-							console.log("Error in updating outletdb requests");
-						}
-						//update RECEIVED requests
-						if(i == (len -1 )) {
-							console.log("Syncing RECEIVED requests");
-							updateReceivedRequests(callback);
-						}
-					});
-				}
-			} else {
-				console.log("Error in connecting to the server");
-			}
-		});
 	});
 }
 exports.syncRequests = function (callback) {
@@ -203,20 +166,38 @@ exports.syncRequests = function (callback) {
 	*/
 
 	//get all the newly added requests
-	var query = "SELECT * FROM batch_request WHERE status=\'ADDED\';";
+	var query = "SELECT b.date as date, d.barcode as barcode, d.quantity as quantity " +
+				"FROM batch_request b INNER JOIN request_details d ON b.date=d.date WHERE b.status = \'ADDED\';";
 
 	connection.query(query, function(err, rows, fields) {
 		if(!err) {
 			console.log(rows.length);
-			for( var i in rows) {
-				var current = rows[i];
-				var query2 = "SELECT * FROM request_details WHERE request_id="+current['request_id']+";";
-				callSyncAddedQuery(query2,current,callback,i,rows.length);
-			}
+			request.post({ url: hq_host+'/syncAddedRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows}}, function(error,response,body) {
+				if(!error) {
+					if( body.status == "ADDED") {
+						var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
+						connection.query(query_update, function(err,rows2,fields2) {
+							if(!err) {
+								console.log("New Requests Synced");
+								//callback(null,true);
+							} else {
+								console.log("Error in updating outletdb requests");
+								//callback(true,null);
+							}
+							//update RECEIVED requests
+							updateReceivedRequests(callback);
+						});
+					}
+				} else {
+					console.log("Error in connecting to the server");
+					callback(true,null);
+				}
+			});
 		} else {
 			console.log(err);
+			//callback(true,null);
 		}
-		updateReceivedRequests(callback);
+		//updateReceivedRequests(callback);
 
 	});
 };
