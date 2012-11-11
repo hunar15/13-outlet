@@ -1,14 +1,10 @@
-var sql = require('mysql'),
-	request = require('request'),
-	connection = sql.createConnection({
-		host     : 'localhost',
-		user     : 'root',
-		password : '',
-		database : 'outletdb',
-		multipleStatements : true
-	});
-var hq_host = 'http://localhost:3001',
-	outletid = 1;
+var request = require('request');
+var config = require('../config/config');
+
+var connection = config.connection;
+var hq_host = config.hq_host,
+	outletid = config.outletid;
+	
 exports.viewRequests = function  (callback) {
 	// body...
 

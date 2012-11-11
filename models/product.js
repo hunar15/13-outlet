@@ -1,10 +1,6 @@
-var sql = require('mysql');
-var connection = sql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'hqdb'
-});
+var config = require('../config/config');
+
+var connection = config.connection;
 
 exports.getProducts =  function(args, callback) {
 	//query
