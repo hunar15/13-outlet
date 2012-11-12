@@ -124,7 +124,6 @@ exports.syncWithHQ = function(req, res) {
 								connection.query(inventory_query, function(err2,rows2,fields2) {
 
 									if(!err2) {
-										console.log(rows2);
 										console.log("NEW items successfully synced with HQ");
 									} else {
 										console.log("Error while adding to the INVENTORY table");
