@@ -4,12 +4,32 @@
  */
 var mysql      = require('mysql'),
 	restock = require('../models/requests'),
-	inventory = require('../models/inventory');
+	inventory = require('../models/inventory'),
+	transaction = require('../models/transaction');
 var config = require('../config/config'),
 	connection = config.connection;
 var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
+
+exports.recomputeSellingPrice = function (req,res) {
+	inventory.recomputeSellingPrice(function (err, result) {
+		if(!err) {
+			res.send({"STATUS" : "SUCCESS"});
+		} else {
+			res.send({"STATUS" : "ERROR"});
+		}
+	});
+};
+exports.addTransaction = function (req,res) {
+	transaction.addTransaction(req.body, function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 
 exports.index = function(req, res){
   res.render('index', { title: 'Express' });
@@ -158,26 +178,6 @@ exports.syncRevenue = function (req, res) {
 };
 
 var t_errorFlag = 0;
-function callTransactionQuery(query, current,cashier) {
-	connection.query(query, function (err, rows) {
-		if (err) {
-			t_errorFlag = 1;
-			console.log(err);
-			console.log( "Error in processing " + current['barcode']);
-		} else {
-			console.log( current['barcode'] + " deducted");
-			var trans_query = "INSERT INTO transaction(cashier_id,unit_sold,date,barcode) VALUES"+
-								"("+cashier+","+current['quantity']+",NOW(),"+current['barcode']+");";
-			connection.query(trans_query, function(err,rows,fields) {
-				if(!err) {
-					console.log("Transaction logged");
-				} else {
-					console.log(err);
-				}
-			});
-		}
-	});
-}
 
 exports.getPrice = function(req,res) {
 	inventory.getPrice(req.body, function(err, result){
@@ -191,7 +191,7 @@ exports.getPrice = function(req,res) {
 
 function restockCheck (callback) {
 	var restockCheckQuery = '';
-	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 1.5) as quantity FROM inventory where stock <= min_stock " +
+	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 2) as quantity FROM inventory where stock <= min_stock " +
 						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
 						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\'));";
 	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
@@ -237,6 +237,7 @@ exports.processTransaction = function (req, res) {
 	var itemList = req.body.list,
 		result = {};
 	result['cashier'] = req.body.cashier;
+	//result['list'] = itemList;
 	var cashier = result['cashier'];
     
 	if (itemList !== null) {
@@ -245,7 +246,8 @@ exports.processTransaction = function (req, res) {
 			cashier : "",
 			list : [{
 				barcode : "",
-				quantity : ""
+				quantity : "",
+				price : ""
 			}]
 		}
 		*/
@@ -276,6 +278,8 @@ exports.processTransaction = function (req, res) {
 				res.send({"ERROR" : true});
                             console.log(err);
 			}
+
+			//add to transaction table
 		});
 		//res.send(result);
 	} else {

@@ -104,6 +104,37 @@ exports.getPrice = function(args, callback) {
 	}
 };
 
+exports.recomputeSellingPrice = function(callback) {
+	
+	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST( p.cost_price, ( ' +
+					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 1.5 * i.min_stock ) ' +
+					'),2) AS new_price FROM product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
+					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode;';
 
+	connection.query(select_query,function (err, rows, fields) {
+		if(!err) {
+			var update_query = '';
+			for(var i in rows) {
+				var current = rows[i];
+				update_query += 'UPDATE inventory SET selling_price='+current['new_price']+' WHERE barcode='+current['barcode']+';';
+			}
+			connection.query(update_query, function(err2,rows2,fields2) {
+				if(!err2) {
+					console.log("Selling prices of PRODUCTS successfully updated");
+					callback(null,true);
+				} else {
+					console.log("Error while updating prices");
+					console.log("ERROR : " + err2);
+					callback(true,null);
+				}
+			});
+		} else {
+			console.log("Error encountered");
+			console.log("ERROR : "+err);
+			callback(true,null);
+		}
+	});
+
+};
 
 
