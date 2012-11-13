@@ -35,6 +35,7 @@ app.get('/recomputeSellingPrice', routes.recomputeSellingPrice);
 app.get('/syncWithHQ', routes.syncWithHQ);
 app.get('/restockCheck',routes.restockCheck);
 app.get('/syncRevenue', routes.syncRevenue);
+app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);

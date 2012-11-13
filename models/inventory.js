@@ -137,4 +137,25 @@ exports.recomputeSellingPrice = function(callback) {
 
 };
 
+exports.addStock = function (args, callback) {
+	var stock = args.stock,
+		barcode = args.barcode;
+
+	if(stock!== null && barcode!==null) {
+		var query = 'UPDATE inventory set stock=stock+' + stock + ' WHERE barcode='+ barcode+' ;';
+
+		connection.query(query, function(err, rows, fields) {
+			if(!err) {
+				console.log("Stock of BARCODE : " + barcode + " successfully updated");
+				callback(null,true);
+			} else {
+				console.log("Error occured while adding stock");
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
+};
 

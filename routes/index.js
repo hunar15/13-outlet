@@ -21,6 +21,17 @@ exports.recomputeSellingPrice = function (req,res) {
 		}
 	});
 };
+
+exports.addStock = function(req,res) {
+	inventory.addStock(req.body, function(err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
 exports.addTransaction = function (req,res) {
 	transaction.addTransaction(req.body, function (err, result) {
 		if(!err) {
