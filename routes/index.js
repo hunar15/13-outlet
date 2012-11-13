@@ -299,7 +299,7 @@ exports.processTransaction = function (req, res) {
 	var itemList = req.body.list,
 		result = {};
 	result['cashier'] = req.body.cashier;
-	//result['list'] = itemList;
+	result['list'] = itemList;
 	var cashier = result['cashier'];
     
 	if (itemList !== null) {
@@ -328,20 +328,29 @@ exports.processTransaction = function (req, res) {
 				//carry out product stock request check
 				restockCheck( function(err2, res2) {
 					if(!err2) {
-						res.send({ "STATUS" : "SUCCESS"});
+						//add to transaction table
+						transaction.addTransaction(result, function (err3, res3) {
+							if(!err3) {
+								console.log("TRANSACTION successfully completed");
+								res.send({ "STATUS" : "SUCCESS"});
+							} else {
+								console.log(err3);
+								res.send({ "STATUS" : "FAIL"});
+							}
+						});
+						
 					} else {
-                                            console.log(err2);
+                        console.log(err2);
 						res.send({ "STATUS" : "FAIL"});
 					}
 				});
 				
 			} else {
 				console.log("Bill processed with errors");
+				console.log(err);
 				res.send({"ERROR" : true});
-                            console.log(err);
+                            
 			}
-
-			//add to transaction table
 		});
 		//res.send(result);
 	} else {
