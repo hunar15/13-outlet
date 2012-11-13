@@ -189,6 +189,46 @@ exports.getPrice = function(req,res) {
 	});
 };
 
+function restockCheck (callback) {
+	var restockCheckQuery = '';
+	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 1.5) as quantity FROM inventory where stock <= min_stock " +
+						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
+						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\'));";
+	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
+		if(!err2) {
+			var result = {};
+			result['requestList'] = rows2;
+			restock.addRequest(result, function(err3, res3) {
+				if(!err3) {
+					//create restock requests
+					console.log("RESTOCK REQUEST operation successfully completed");
+					callback(null,true);
+				} else {
+					console.log("Error while add RESTOCK REQUESTS");
+					console.log("Error : " + err3);
+					callback(true,null);
+				}
+			});
+		} else {
+			console.log("Error while calculating PRODUCTS which require restock");
+			console.log("Error : " + err2);
+			callback(true,null);
+		}
+	});
+}
+
+exports.restockCheck = function  (req,res) {
+	restockCheck(function(err,result) {
+		if(!err) {
+			res.send({"STATUS" : "SUCCESS"});
+		} else {
+			console.log("Error encountered");
+			console.log("Error : " + err);
+			res.send({"STATUS" : "ERROR"});
+		}
+	});
+};
+
 exports.processTransaction = function (req, res) {
 	// body...
 	t_errorFlag =0;
@@ -207,21 +247,31 @@ exports.processTransaction = function (req, res) {
 			}]
 		}
 		*/
+		var updateStockQuery ='';
 		for (var i in itemList) {
 			var current = itemList[i];
-			var query = "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'];
-			query += " WHERE barcode=" + itemList[i]['barcode'] +" ;";
-			callTransactionQuery(query,current,cashier);
+			updateStockQuery += "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'] +" WHERE barcode=" + itemList[i]['barcode'] +" ;";
+			//callTransactionQuery(query,current,cashier);
 		}
-		if (t_errorFlag == 1) {
-			console.log("Bill processed with errors");
-			result['errors'] = true;
-		} else{
-			console.log("Bill processed without errors");
-			result['errors'] = false;
-			//carry out product stock request check
-		}
-		res.send(result);
+		connection.query(updateStockQuery, function(err,rows,fields) {
+			if(!err) {
+				console.log("Bill processed without errors");
+				result['errors'] = false;
+				//carry out product stock request check
+				restockCheck( function(err2, res2) {
+					if(!err2) {
+						res.send({ "STATUS" : "SUCCESS"});
+					} else {
+						res.send({ "STATUS" : "FAIL"});
+					}
+				});
+				
+			} else {
+				console.log("Bill processed with errors");
+				res.send({"ERROR" : true});
+			}
+		});
+		//res.send(result);
 	} else {
 		console.log("Absent parameters");
 		res.send({error:true});

@@ -33,6 +33,7 @@ app.get('/syncRequests', routes.syncRequests);
 
 
 app.get('/syncWithHQ', routes.syncWithHQ);
+app.get('/restockCheck',routes.restockCheck);
 app.post('/syncRevenue', routes.syncRevenue);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);

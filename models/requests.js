@@ -42,37 +42,45 @@ exports.addRequest =  function(args, callback) {
 	//check if current date order tuple exists in the db
 	var query = 'INSERT INTO batch_request(date,status) SELECT CURDATE(),\'ADDED\' FROM DUAL WHERE ' +
 				'NOT EXISTS(SELECT * FROM batch_request WHERE date=CURDATE());';
-		barcode = args.barcode,
-		quantity = args.quantity;
+		requestList = args.requestList;
 
 	if (requestList !== null) {
+		console.log("Creating stock requests for required PRODUCTS...");
 		connection.query( query,  function(err, rows, fields) {
 			if(!err) {
 				var errorFlag = 0,
 					query_2 = '';
+				for(var i in requestList) {
+					var current = requestList[i];
+					query_2 += "INSERT INTO request_details VALUES(CURDATE()," + current['barcode']+"," + current['quantity']+ ");";
+				}
+				if(query_2 !== '') {
+					//execute multiple queries
+					connection.query(query_2, function (err2, rows2, fields2) {
+						if(!err2) {
+							console.log("Restock request for "+ requestList.length+ " items added");
+							callback(null,true);
+						} else {
+							errorFlag = 1;
+							console.log(err2);
+							callback(true,null);
+						}
+						/*if (errorFlag === 0) {
+							console.log("Request successfully added");
+							
+						} else {
+							console.log("Errors encountered while adding request details");
+							callback(true,null);
+						}*/
+					});
+				} else {
+					console.log("Nothing to RESTOCK");
+					callback(null,true);
+				}
 				
-				query_2 += "INSERT INTO request_details VALUES(CURDATE()," + barcode+"," + quantity+ ");";
-
-				//execute multiple queries
-				connection.query(query_2, function (err2, rows2, fields2) {
-					if(!err2) {
-						console.log("Request for "+ quantity+ " items of "+ barcode+ " added to the list");
-					} else {
-						errorFlag = 1;
-						console.log(err2);
-						callback(err2);
-					}
-					if (errorFlag === 0) {
-						console.log("Request successfully added");
-						callback(null,true);
-					} else {
-						console.log("Errors encountered while adding request details");
-						callback(true,null);
-					}
-				});
 			} else {
 				console.log(err);
-				callback(err);
+				callback(true,null);
 			}
 		});
 	} else {
