@@ -1,5 +1,0 @@
-var client = require('./client');
-var routes = {
-    'handshake':client.handshake,
-    'price [0-9]'
-};
