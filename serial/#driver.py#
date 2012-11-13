@@ -88,6 +88,6 @@ def test():
     inp = lambda x: raw_input()
     outp = lambda x: print(x)
     bar = '30011470'
-    quantity = 1
+    quantity = 1000
     t = Transaction()
     handle('1',bar,quantity,t,outp,inp)
