@@ -233,10 +233,12 @@ exports.processTransaction = function (req, res) {
 	// body...
 	t_errorFlag =0;
 	//first error check : do the required arguments exist
+    console.log(req.body);
 	var itemList = req.body.list,
 		result = {};
 	result['cashier'] = req.body.cashier;
 	var cashier = result['cashier'];
+    
 	if (itemList !== null) {
 		/*
 		{
@@ -248,8 +250,10 @@ exports.processTransaction = function (req, res) {
 		}
 		*/
 		var updateStockQuery ='';
+            console.log(itemList);
 		for (var i in itemList) {
 			var current = itemList[i];
+                    console.log(itemList[i]);
 			updateStockQuery += "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'] +" WHERE barcode=" + itemList[i]['barcode'] +" ;";
 			//callTransactionQuery(query,current,cashier);
 		}
@@ -262,6 +266,7 @@ exports.processTransaction = function (req, res) {
 					if(!err2) {
 						res.send({ "STATUS" : "SUCCESS"});
 					} else {
+                                            console.log(err2);
 						res.send({ "STATUS" : "FAIL"});
 					}
 				});
@@ -269,6 +274,7 @@ exports.processTransaction = function (req, res) {
 			} else {
 				console.log("Bill processed with errors");
 				res.send({"ERROR" : true});
+                            console.log(err);
 			}
 		});
 		//res.send(result);

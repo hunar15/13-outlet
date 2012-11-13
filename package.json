@@ -10,6 +10,7 @@
     "jade": "*",
     "mysql": "*",
     "serialport": "*",
-    "request" : "*"
+    "request" : "*",
+    "underscore":"*"
   }
 }
