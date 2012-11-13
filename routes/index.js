@@ -5,14 +5,11 @@
 var mysql      = require('mysql'),
 	restock = require('../models/requests'),
 	inventory = require('../models/inventory');
-var connection = mysql.createConnection({
-  host     : 'localhost',
-  user     : 'root',
-  password : '',
-  database : 'outletdb'
-});
+var config = require('../config/config'),
+	connection = config.connection;
 var request = require('request'),
-	hq_host = 'http://localhost:3001';
+	hq_host = config.hq_host,
+	outletid = config.outletid;
 
 exports.index = function(req, res){
   res.render('index', { title: 'Express' });
@@ -35,7 +32,7 @@ exports.syncRequests = function (req, res) {
 	});
 };
 
-function syncDeleted( outletid) {
+function syncDeleted(res) {
 	var get_deleted = {
 				url : hq_host+'/getDiscontinued',
 				json : true,
@@ -43,13 +40,32 @@ function syncDeleted( outletid) {
 			};
 	request.post( get_deleted, function (error, response, body2) {
 		if(!error) {
-			console.log("Response message : " + body2);
-			var discontinueList = body2.discontinueList;
+			//console.log("Response message : " + body2);
+			var discontinueList = body2.discontinueList,
+				discontinue_query = '';
 			for (var i in discontinueList) {
 				var current = discontinueList[i];
-				var query = "UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=" + current.barcode+";";
-				callDiscontinueQuery(query,current);
+				discontinue_query += "UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=" + current.barcode+";";
+				//callDiscontinueQuery(query,current);
 			}
+			if(discontinue_query !== '') {
+				connection.query(discontinue_query, function(err,rows,fields) {
+					if(!err) {
+						console.log("DISCONTINUED products successfully synced");
+						res.send({"status" : "SUCCESS"});
+					} else {
+						console.log("Error occured while syncing DISCONTINUED products");
+						console.log("Error : " + err);
+						res.send({"status" : "ERROR"});
+					}
+					return;
+				});
+			} else {
+				console.log("No products to be DISCONTINUED");
+				res.send({"status" : "SUCCESS"});
+			}
+		} else {
+			res.send({"status" : "ERROR"});
 		}
 	});
 }
@@ -60,27 +76,7 @@ function callDiscontinueQuery(query,current) {
 			console.log(current.barcode + "discontinued.");
 	});
 }
-function callQuery(flag, query , current, outletid) {
-	connection.query(query, function(err, rows,fields) {
-		if(!err) {
-			console.log(current.barcode + " added to Product");
-			var sub_query = "INSERT INTO inventory VALUES("+current.barcode+",0,"+current.selling_price+","+current.min_stock+");";
-			connection.query(sub_query, function(err2,rows2,fields2) {
-				if(!err2) {
-					console.log(current.barcode + " added to Inventory");
-					//place stock request for this product over here
-				}
-				else
-					console.log("Error adding " + current.barcode + " to Inventory");
-				if(flag) {
-					syncDeleted(outletid);
-				}
-			});
-		} else {
-			console.log("Error adding " + current.barcode + " to Product");
-		}
-	});
-}
+
 exports.syncWithHQ = function(req, res) {
 		//find errors in arguments if any
 		//create http request to hq server
@@ -94,30 +90,56 @@ exports.syncWithHQ = function(req, res) {
 			a. check status of past requests
 			b. change ones that are necessary
 		*/
-		var outletid = req.body.outletid;
 		var get_added = {
 								url : hq_host+'/getAdded',
 								json : true,
-								body : { 'outletid' : 1 }
+								body : { 'outletid' : outletid }
 							};
 		if ( outletid !== null ) {
-			console.log('IN here');
+			console.log('Connecting to HQ Server..');
 			request.post( get_added, function (error, response, body) {
 				if(!error) {
-					console.log("Response message : " + body);
+					console.log("Connected successfully!");
 					var addedList = body.addedList;
-					console.log("Length : " + addedList.length);
+					console.log("No. of new products : " + addedList.length);
 					var i, flag;
+					var product_query= '',
+						inventory_query = '';
 					for (i=0; i< addedList.length;i++) {
 						var current = addedList[i];
-						console.log(current);
-						var query = "INSERT INTO product VALUES("+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'NORMAL\');";
-						if(i==(addedList.length - 1 ))
+						product_query += "INSERT INTO product select "+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'NORMAL\'" +
+										" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
+						/*if(i==(addedList.length - 1 ))
 							flag = 1;
-						callQuery(flag,query,current, outletid);
+
+						callQuery(flag,query,current, outletid);*/
+						inventory_query += "INSERT INTO inventory select "+current['barcode']+",0,"+current['selling_price']+","+current['min_stock']+
+										" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+current['barcode']+");";
+
 					}
+					if(product_query !== '') {
+						connection.query(product_query, function(err,rows,fields) {
+							if(!err) {
+									console.log(rows);
+								connection.query(inventory_query, function(err2,rows2,fields2) {
+
+									if(!err2) {
+										console.log("NEW items successfully synced with HQ");
+									} else {
+										console.log("Error while adding to the INVENTORY table");
+									}
+								});
+							} else {
+								console.log("Error while adding to the PRODUCT table");
+								//console.log("Error : " +err);
+							}
+						});
+					} else {
+						console.log("No NEW products to be synced");
+					}
+					
 					//now sync all products to be deleted
-					syncDeleted(outletid);
+					syncDeleted(res);
 				}
 			} );
 		} else {
@@ -167,6 +189,46 @@ exports.getPrice = function(req,res) {
 	});
 };
 
+function restockCheck (callback) {
+	var restockCheckQuery = '';
+	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 1.5) as quantity FROM inventory where stock <= min_stock " +
+						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
+						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\'));";
+	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
+		if(!err2) {
+			var result = {};
+			result['requestList'] = rows2;
+			restock.addRequest(result, function(err3, res3) {
+				if(!err3) {
+					//create restock requests
+					console.log("RESTOCK REQUEST operation successfully completed");
+					callback(null,true);
+				} else {
+					console.log("Error while add RESTOCK REQUESTS");
+					console.log("Error : " + err3);
+					callback(true,null);
+				}
+			});
+		} else {
+			console.log("Error while calculating PRODUCTS which require restock");
+			console.log("Error : " + err2);
+			callback(true,null);
+		}
+	});
+}
+
+exports.restockCheck = function  (req,res) {
+	restockCheck(function(err,result) {
+		if(!err) {
+			res.send({"STATUS" : "SUCCESS"});
+		} else {
+			console.log("Error encountered");
+			console.log("Error : " + err);
+			res.send({"STATUS" : "ERROR"});
+		}
+	});
+};
+
 exports.processTransaction = function (req, res) {
 	// body...
 	t_errorFlag =0;
@@ -185,21 +247,31 @@ exports.processTransaction = function (req, res) {
 			}]
 		}
 		*/
+		var updateStockQuery ='';
 		for (var i in itemList) {
 			var current = itemList[i];
-			var query = "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'];
-			query += " WHERE barcode=" + itemList[i]['barcode'] +" ;";
-			callTransactionQuery(query,current,cashier);
+			updateStockQuery += "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'] +" WHERE barcode=" + itemList[i]['barcode'] +" ;";
+			//callTransactionQuery(query,current,cashier);
 		}
-		if (t_errorFlag == 1) {
-			console.log("Bill processed with errors");
-			result['errors'] = true;
-		} else{
-			console.log("Bill processed without errors");
-			result['errors'] = false;
-			//carry out product stock request check
-		}
-		res.send(result);
+		connection.query(updateStockQuery, function(err,rows,fields) {
+			if(!err) {
+				console.log("Bill processed without errors");
+				result['errors'] = false;
+				//carry out product stock request check
+				restockCheck( function(err2, res2) {
+					if(!err2) {
+						res.send({ "STATUS" : "SUCCESS"});
+					} else {
+						res.send({ "STATUS" : "FAIL"});
+					}
+				});
+				
+			} else {
+				console.log("Bill processed with errors");
+				res.send({"ERROR" : true});
+			}
+		});
+		//res.send(result);
 	} else {
 		console.log("Absent parameters");
 		res.send({error:true});
