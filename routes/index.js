@@ -169,11 +169,62 @@ exports.syncWithHQ = function(req, res) {
 
 exports.syncRevenue = function (req, res) {
 	// find errors in arguments if any
-	var outletid = req.body.outletid;
+	var result = {};
 	if (outletid !== null) {
+		var query = 'SELECT distinct date, SUM(price * total) as revenue FROM sold_yesterday;';
 
+		connection.query(query, function ( err, rows, fields ) {
+			if(!err) {
+				result['date'] = rows[0]['date'];
+				result['revenue'] = rows[0]['revenue'];
+
+				var query_2 = 'SELECT barcode, MAX(price * total) as revenue FROM sold_yesterday GROUP BY barcode;';
+
+				connection.query(query_2, function(err2,rows2,fields2) {
+					if(!err2) {
+						result['barcode'] = rows2[0]['barcode'];
+						result['outlet_id'] = outletid;
+
+						console.log("Revenue details successfully retrieved");
+						var post_options = {
+								url : hq_host+'/syncRevenue',
+								json : true,
+								body : result
+							};
+
+						console.log("Syncing revenue with HQ...");
+
+						//post sync request to HQ
+						request.post(post_options, function(error, response, body) {
+							if(!error) {
+								if(body['STATUS'] === "SUCCESS") {
+									console.log("Revenue successfully synced with HQ");
+									res.send({"STATUS" : "SUCCESS"});
+								} else {
+									console.log(body['STATUS']);
+									res.send({"STATUS" : "ERROR"});
+								}
+							} else {
+								console.log("Error encountered");
+								console.log("ERROR : " + error);
+								res.send({"STATUS" : "ERROR"});
+							}
+						});
+					} else {
+						console.log("Error encountered");
+						console.log("ERROR : " + err2);
+						res.send({"STATUS" : "ERROR"});
+					}
+				});
+			} else {
+				console.log("Error encountered");
+				console.log("ERROR : " + err);
+				res.send({"STATUS" : "ERROR"});
+			}
+		});
 	} else {
-
+		console.log("Invalid or absent parameters");
+		res.send({"STATUS" : "ERROR"});
 	}
 };
 
