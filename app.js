@@ -30,7 +30,7 @@ app.configure('development', function(){
 app.get('/', routes.index);
 app.get('/users', user.list);
 app.get('/syncRequests', routes.syncRequests);
-
+app.get('/recomputeSellingPrice', routes.recomputeSellingPrice);
 
 app.get('/syncWithHQ', routes.syncWithHQ);
 app.get('/restockCheck',routes.restockCheck);
@@ -38,6 +38,7 @@ app.post('/syncRevenue', routes.syncRevenue);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);
+app.post('/add/transaction', routes.addTransaction);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
