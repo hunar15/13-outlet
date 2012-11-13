@@ -8,14 +8,15 @@ var serialPort = new SerialPort("/dev/ttyUSB0", {
     stopbits: 1,
     parser:serialLib.parsers.readline("\n") 
 });
-var logInput = function () {
+var log = function () {
     serialPort.on("data", function (data) {
-	console.log("start");
-	console.log(data.toString());
+        console.log("start");
+        console.log(data.toString());
     });
     serialPort.on("close", function (data) {
-	console.log("end");
+        console.log("end");
     });
 };
+var listen = function (req, )
 
-logInput();
+exports.log = log;
