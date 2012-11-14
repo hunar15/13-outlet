@@ -377,7 +377,7 @@ exports.restockCheck = function  (req,res) {
 			console.log("Error : " + err);
 			res.send({"STATUS" : "ERROR"});
 		}
-	});a
+	});
 };
 
 exports.processTransaction = function (req, res) {
