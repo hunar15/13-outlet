@@ -97,19 +97,43 @@ function syncInventory(res) {
 				if(!error2) {
 					if(body2["STATUS"] === "SUCCESS") {
 						console.log("COMPLETE Sync successful");
-						res.send({"STATUS":"SUCCESS"});
+						//res.send({"STATUS":"SUCCESS"});
 					} else {
 						console.log(' ERROR occured : ' + error2);
-						res.send({"STATUS":"ERROR"});
+						//res.send({"STATUS":"ERROR"});
 					}
+					restockCheck(function (err,result) {
+						// body...
+						if(!err) {
+							res.send({"STATUS":"SUCCESS"});
+						} else {
+							res.send({"STATUS":"ERROR"});
+						}
+					});
 				} else {
 					console.log(' ERROR occured : ' + error2);
-					res.send({"STATUS":"ERROR"});
+					//res.send({"STATUS":"ERROR"});
+					restockCheck(function (err,result) {
+						// body...
+						if(!err) {
+							res.send({"STATUS":"SUCCESS"});
+						} else {
+							res.send({"STATUS":"ERROR"});
+						}
+					});
 				}
 			});
 		} else {
 			console.log(' ERROR occured : ' + err2);
-			res.send({"STATUS":"ERROR"});
+			//res.send({"STATUS":"ERROR"});
+			restockCheck(function (err,result) {
+						// body...
+				if(!err) {
+					res.send({"STATUS":"SUCCESS"});
+				} else {
+					res.send({"STATUS":"ERROR"});
+				}
+			});
 		}
 	});
 }
@@ -349,6 +373,18 @@ exports.syncRevenue = function (req, res) {
 	}
 };
 
+function preSync (argument) {
+		restock.syncRequests(function (err, result) {
+			if(!err) {
+				console.log("RESTOCK REQUESTS synced successfully");
+			} else {
+				console.log("RESTOCK REQUESTS syncing failed");
+			}
+
+
+		});
+}
+
 var t_errorFlag = 0;
 
 exports.getPrice = function(req,res) {
@@ -365,7 +401,8 @@ function restockCheck (callback) {
 	var restockCheckQuery = '';
 	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 2) as quantity FROM inventory where stock <= min_stock " +
 						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
-						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\'));";
+						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\')) " +
+						" AND NOT EXISTS (select * from product p where p.barcode=barcode AND p.status =\'DISCONTINUED\');";
 	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
 		if(!err2) {
 			var result = {};
