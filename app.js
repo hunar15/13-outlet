@@ -32,6 +32,8 @@ app.get('/', routes.index);
 app.get('/users', user.list);
 app.get('/syncRequests', routes.syncRequests);
 app.get('/recomputeSellingPrice', routes.recomputeSellingPrice);
+app.get('/get/products',routes.getProducts);
+app.get('/get/inventory',routes.getInventory);
 
 app.get('/syncWithHQ', routes.syncWithHQ);
 app.get('/restockCheck',routes.restockCheck);

@@ -5,12 +5,33 @@
 var mysql      = require('mysql'),
 	restock = require('../models/requests'),
 	inventory = require('../models/inventory'),
-	transaction = require('../models/transaction');
+	transaction = require('../models/transaction'),
+	product = require('../models/product');
 var config = require('../config/config'),
 	connection = config.connection;
 var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
+
+exports.getProducts = function (req,res) {
+	product.getProducts(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.getInventory = function (req,res) {
+	inventory.getInventory(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 
 exports.recomputeSellingPrice = function (req,res) {
 	inventory.recomputeSellingPrice(function (err, result) {

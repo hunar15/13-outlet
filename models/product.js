@@ -5,8 +5,9 @@ var connection = config.connection;
 exports.getProducts =  function(args, callback) {
 	//query
 	
-	var query = 'SELECT p.barcode, p.name, p.category, p.manufacturer, i.stock, i.min_stock';
-		query+=', i.selling_price, p.cost_price, p.status FROM ';
+	var query = 'SELECT p.barcode as barcode, p.name as name, p.category as category, p.manufacturer as manufacturer, i.stock as stock,'+
+				' i.min_stock as min_stock ';
+		query+=', i.selling_price as selling_price, p.cost_price as cost_price, p.status as status FROM ';
 		query+= 'product p INNER JOIN inventory i on i.barcode = p.barcode;';
 	//var searchParameter = args.query;
 	var result = {};
@@ -31,7 +32,7 @@ exports.getProducts =  function(args, callback) {
 			current['values'] = rows[tuple];
 			result['data'].push(current);
 		}
-		console.log(result);
+		//console.log(result);
 		callback(err, result);
 	});
 };
