@@ -18,7 +18,7 @@ class Transaction:
     def finalize(self, cashier):
         item = self.items[cashier]
         payload = {
-            'cashier': cashier,
+            'cashier': int(cashier),
             'list': item
             }
         print(json.dumps(payload))
@@ -31,7 +31,7 @@ class Transaction:
 def item_wrap(barcode, quantity, price):
     d = {
         'barcode':barcode,
-        'quantity':quantity,
+        'quantity':int(quantity),
         'price': price
         }
     return d
@@ -39,7 +39,7 @@ def item_wrap(barcode, quantity, price):
 
 def create_connection():
     if os.name == 'posix':
-        PORT = "/dev/ttyUSB0"
+        PORT = "/dev/ttyUSB1"
     elif os.name == "nt":
         PORT = "COM1"
     return serial.Serial(PORT,9600,timeout = 0.5)
@@ -64,26 +64,50 @@ def handle(cid, barcode, quantity, t, ser_write, ser_read):
     h = ser_read(1)
     if h == "#":
         t.finalize(cid)
+
     
 def parse(message):
-    m = re.search('([0-9]{8}):([0-9]{4})',message)
-    return m.groups(0), m.groups(1)
+    if len(message) != 13:
+        print(message+"is illegal")
+        return 
+    m = re.search('([0-9]{8}):([0-9]+)',message)
+    return m.groups(0)
 
 def main():
     ser = create_connection()
-    ser_write = lambda x: ser.write(x)
+    ser_write = lambda x: ser.write(str(x).zfill(8))
     ser_read = lambda x: ser.read(x)
     transactions = Transaction()
     for cid in cashiers:
         ser.write(cid)
         fst = ser.read(1)
         #provisional as of now I echo the id.
-        if fst!= cid:
-            barcode, quantity = parse(fst + ser.read(11))
+        if fst == '!':
+            rest = ser.read(13)
+            whole = rest
+            print(whole)
+            barcode, quantity = parse(whole)
             handle(cid, barcode, quantity,transactions, ser_write, ser_read)
     
 
 #if __name__ == '__main__':
+#    poll()
+def single():
+    ser = create_connection()
+    ser_write = lambda x: ser.write(str(x).zfill(8))
+    ser_read = lambda x: ser.read(x)
+    t = Transaction()
+    cid = '1'
+    ser.write(cid)
+    fst = ser.read(1)
+        #provisional as of now I echo the id.
+    if fst == '!':
+        rest = ser.read(13)
+        whole = rest
+        print(whole)
+        barcode, quantity = parse(whole)
+        handle(cid, barcode, quantity,t, ser_write, ser_read)
+    
 def test():
     inp = lambda x: raw_input()
     outp = lambda x: print(x)
