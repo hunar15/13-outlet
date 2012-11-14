@@ -62,6 +62,56 @@ exports.syncRequests = function (req, res) {
 		res.send(result);
 	});
 };
+function syncUpdated(res) {
+	var get_updated = {
+								url : hq_host+'/getUpdated',
+								json : true,
+								body : { 'outletid' : outletid }
+							};
+
+	console.log('Retrieving updated PRODUCT list..');
+
+	request.post(get_updated, function(error, response, body) {
+		if(!error) {
+			var cp_list = body.cp_list,
+				ms_list = body.ms_list,
+				query = '';
+
+			if(ms_list.length !== 0) {
+				//update min_stock
+				/*
+				{
+					ms_list : [
+						{
+							barcode : "",
+							min_stock : "",
+						},...
+					]
+				}
+				*/
+				for(var i in ms_list) {
+					var current = ms_list[i];
+					query += 'UPDATE inventory SET min_stock='+current['min_stock']+' WHERE barcode=' + current['barcode']+' ;';
+				}
+				connection.query(query, function (err,rows,fields) {
+					if(!err) {
+						console.log(ms_list.length + " PRODUCTS updated successfully");
+						res.send({"STATUS":"SUCCESS"});
+					} else {
+						console.log(' ERROR occured : ' + err);
+						res.send({"STATUS":"ERROR"});
+					}
+				});
+			} else {
+				console.log("No products to be UPDATED");
+				res.send({"STATUS":"SUCCESS"});
+			}
+		} else {
+			console.log("ERROR occured : " + error);
+			res.send({"STATUS":"ERROR"});
+		}
+	});
+}
 
 function syncDeleted(res) {
 	var get_deleted = {
@@ -83,20 +133,25 @@ function syncDeleted(res) {
 				connection.query(discontinue_query, function(err,rows,fields) {
 					if(!err) {
 						console.log("DISCONTINUED products successfully synced");
-						res.send({"status" : "SUCCESS"});
+					//	res.send({"status" : "SUCCESS"});
 					} else {
 						console.log("Error occured while syncing DISCONTINUED products");
 						console.log("Error : " + err);
-						res.send({"status" : "ERROR"});
+					//	res.send({"status" : "ERROR"});
 					}
-					return;
+					//sync updated products
+					syncUpdated(res);
 				});
 			} else {
 				console.log("No products to be DISCONTINUED");
-				res.send({"status" : "SUCCESS"});
+				//res.send({"status" : "SUCCESS"});
+				//sync updated products
+				syncUpdated(res);
 			}
 		} else {
-			res.send({"status" : "ERROR"});
+			//res.send({"status" : "ERROR"});
+			//sync updated products
+			syncUpdated(res);
 		}
 	});
 }
