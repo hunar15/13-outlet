@@ -64,7 +64,7 @@ exports.syncRequests = function (req, res) {
 };
 function syncUpdated(res) {
 	var get_updated = {
-								url : hq_host+'/getUpdated',
+								url : hq_host+'/syncUpdated',
 								json : true,
 								body : { 'outletid' : outletid }
 							};
@@ -73,10 +73,11 @@ function syncUpdated(res) {
 
 	request.post(get_updated, function(error, response, body) {
 		if(!error) {
-			var cp_list = body.cp_list,
-				ms_list = body.ms_list,
+
+			var ms_list = body.ms_list,
 				query = '';
 
+			console.log(ms_list);
 			if(ms_list.length !== 0) {
 				//update min_stock
 				/*
@@ -343,7 +344,7 @@ exports.restockCheck = function  (req,res) {
 			console.log("Error : " + err);
 			res.send({"STATUS" : "ERROR"});
 		}
-	});
+	});a
 };
 
 exports.processTransaction = function (req, res) {
