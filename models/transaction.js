@@ -30,10 +30,10 @@ exports.addTransaction = function (args, callback) {
 				var query;
 				if(rows.length === 0) {
 					//insert new transaction with random id
-					query = 'INSERT INTO transaction(id,cashier_id,date) VALUES(FLOOR( RAND() *1000000),'+cashier+',CURDATE());';
+					query = 'INSERT INTO transaction(id,cashier_id,date) VALUES(FLOOR( RAND() *1000000),\''+cashier+'\',CURDATE());';
 				} else {
 					//insert new transaction with appended id
-					query = 'INSERT INTO transaction(cashier_id,date) VALUES('+cashier+',CURDATE());';				
+					query = 'INSERT INTO transaction(cashier_id,date) VALUES(\''+cashier+'\',CURDATE());';
 				}
 
 				connection.query(query, function (err2,rows2,fields2) {
