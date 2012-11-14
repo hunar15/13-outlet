@@ -5,7 +5,7 @@ import requests
 import json
 import re
 PORT = "COM1"
-cashiers = {'a':'0001','b':'0002','c':'0003'}
+cashiers = {'a':'0001'}#,'b':'0002','c':'0003'}
 shoppc = "http://localhost:3000"
 class Transaction:
     def __init__(self):
@@ -88,26 +88,12 @@ def main():
             print(whole)
             barcode, quantity = parse(whole)
             handle(cid, barcode, quantity,transactions, ser_write, ser_read)
+            price_ack ='' #ser_read(8)
+            print("price ack : "+price_ack)
     
 
 #if __name__ == '__main__':
 #    poll()
-def single():
-    ser = create_connection()
-    ser_write = lambda x: ser.write(str(x).zfill(8))
-    ser_read = lambda x: ser.read(x)
-    t = Transaction()
-    cid = 'a'
-    ser.write(cid)
-    fst = ser.read(1)
-        #provisional as of now I echo the id.
-    if fst == '!':
-        rest = ser.read(13)
-        whole = rest
-        print(whole)
-        barcode, quantity = parse(whole)
-        handle(cid, barcode, quantity,t, ser_write, ser_read)
-        print("price ack: "+ser.read(8))
     
 def test():
     inp = lambda x: raw_input()
@@ -116,3 +102,5 @@ def test():
     quantity = 1000
     t = Transaction()
     handle('a',bar,quantity,t,outp,inp)
+    b2 = '18243337'
+    handle('a',b2,quantity, t,outp,inp)
