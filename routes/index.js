@@ -62,6 +62,39 @@ exports.syncRequests = function (req, res) {
 		res.send(result);
 	});
 };
+
+function syncInventory(res) {
+	console.log("Syncing INVENTORY with HQ...");
+	
+	var query_2= 'SELECT * from inventory;';
+	connection.query(query_2, function (err2,rows2, fields2) {
+		// body...
+		if(!err2) {
+			var update_options = {
+									url : hq_host+'/syncAll',
+									json : true,
+									body : { 'outletid' : outletid, 'inventory' : rows2 }
+								};
+			request.post(update_options, function(error2,response2,body2) {
+				if(!error2) {
+					if(body2["STATUS"] === "SUCCESS") {
+						console.log("COMPLETE Sync successful");
+						res.send({"STATUS":"SUCCESS"});
+					} else {
+						console.log(' ERROR occured : ' + error2);
+						res.send({"STATUS":"ERROR"});
+					}
+				} else {
+					console.log(' ERROR occured : ' + error2);
+					res.send({"STATUS":"ERROR"});
+				}
+			});
+		} else {
+			console.log(' ERROR occured : ' + err2);
+			res.send({"STATUS":"ERROR"});
+		}
+	});
+}
 function syncUpdated(res) {
 	var get_updated = {
 								url : hq_host+'/syncUpdated',
@@ -97,19 +130,22 @@ function syncUpdated(res) {
 				connection.query(query, function (err,rows,fields) {
 					if(!err) {
 						console.log(ms_list.length + " PRODUCTS updated successfully");
-						res.send({"STATUS":"SUCCESS"});
+						//res.send({"STATUS":"SUCCESS"});
 					} else {
 						console.log(' ERROR occured : ' + err);
-						res.send({"STATUS":"ERROR"});
+						//res.send({"STATUS":"ERROR"});
 					}
+					syncInventory(res);
 				});
 			} else {
 				console.log("No products to be UPDATED");
-				res.send({"STATUS":"SUCCESS"});
+				//res.send({"STATUS":"SUCCESS"});
+				syncInventory(res);
 			}
 		} else {
 			console.log("ERROR occured : " + error);
-			res.send({"STATUS":"ERROR"});
+			//res.send({"STATUS":"ERROR"});
+			syncInventory(res);
 		}
 	});
 }
