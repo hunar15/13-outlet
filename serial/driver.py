@@ -88,7 +88,7 @@ def main():
             print(whole)
             barcode, quantity = parse(whole)
             handle(cid, barcode, quantity,transactions, ser_write, ser_read)
-            price_ack ='' #ser_read(8)
+            price_ack =ser_read(8)
             print("price ack : "+price_ack)
     
 
