@@ -30,14 +30,14 @@ app.configure('development', function(){
 
 app.get('/', routes.index);
 app.get('/users', user.list);
-app.get('/syncRequests', routes.syncRequests);
-app.get('/recomputeSellingPrice', routes.recomputeSellingPrice);
+
+//sync routes
+app.get('/syncAtStart', routes.syncAtStart);
+app.get('/syncAtEnd', routes.syncAtEnd);
+
 app.get('/get/products',routes.getProducts);
 app.get('/get/inventory',routes.getInventory);
 
-app.get('/syncWithHQ', routes.syncWithHQ);
-app.get('/restockCheck',routes.restockCheck);
-app.get('/syncRevenue', routes.syncRevenue);
 app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);
