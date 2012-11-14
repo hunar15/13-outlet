@@ -40,7 +40,7 @@ app.get('/get/inventory',routes.getInventory);
 
 app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
-app.post('/stock/setAsReceived', routes.setAsReceived);
+app.get('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);
 app.post('/add/transaction', routes.addTransaction);
 

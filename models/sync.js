@@ -294,6 +294,42 @@ exports.syncInventoryAndRestock = function(callback) {
 		
 };
 
+function updateDispatchedRequests(callback) {
+	console.log("Retrieving DISPATCHED requests from HQ..");
+	request.post( {url : hq_host+'/syncDispatchedRequests',json :true, body: {'outletid' : outletid}}, function(error,response,body) {
+		if(!error) {
+			if(body['STATUS'] === "SUCCESS") {
+				var dp_list = body.dp_list;
+
+				if(dp_list.length !== 0) {
+					var query = '';
+					for (var i in dp_list) {
+						var current = dp_list[i],
+							date = current['date'].split("T")[0];
+						query += 'UPDATE batch_request SET status=\'DISPATCHED\' where date=\''+date+'\';';
+					}
+
+					connection.query(query, function (err,rows,fields) {
+						if(!err) {
+							console.log("DISPATCHED requests successfully updated");
+							callback(null,true);
+						} else {
+							console.log("ERROR : " + err);
+							callback(true,null);
+						}
+					});
+				} else {
+					console.log("No requests dispatched from HQ side");
+					callback(null,true);
+				}
+		} else {
+			console.log("ERROR while posting request : " + error);
+			callback(true,null);
+		}
+	}
+	});
+}
+
 function updateReceivedRequests(callback) {
 	var query = "SELECT DATE(date) as date, status FROM batch_request WHERE status=\'RECEIVED\';";
 	console.log("Updating RECEIVED requests..");
@@ -311,8 +347,8 @@ function updateReceivedRequests(callback) {
 							} else {
 								console.log("Error in updating outletdb requests");
 							}
-							//All done!
-							callback(err2, rows2);
+							//Final Step
+							updateDispatchedRequests(callback);
 						});
 					}
 				} else {
@@ -322,7 +358,7 @@ function updateReceivedRequests(callback) {
 			});
 		} else {
 			console.log("Errors in retrieving RECEIVED stock requests");
-			callback(err);
+			updateDispatchedRequests(callback);
 		}
 	});
 }
