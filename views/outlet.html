@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Inventory - HQ Interface - CEG Hypermarket 13</title>
+		
+		<script src="http://code.jquery.com/jquery-1.8.2.js"></script>
+		<script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+		<script src="js/bootstrap-modal.js"></script>
+		<script src="js/outlet.js"></script>
+		
+		<script src="js/editablegrid.js"></script>
+		<script src="js/editablegrid_renderers.js" ></script>
+		<script src="js/editablegrid_editors.js" ></script>
+		<script src="js/editablegrid_validators.js" ></script>
+		<script src="js/editablegrid_utils.js" ></script>
+		<link rel="stylesheet" href="css/editablegrid.css" type="text/css" media="screen">
+		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="screen">
+		<link rel="stylesheet" href="css/bootstrap-responsive.css" type="text/css" media="screen">
+		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen">
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.0/themes/base/jquery-ui.css" />
+		<!--[if lt IE 9]>
+		  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+
+
+	</head>
+	
+	<body>
+		<div class="container">	
+			<div class="hero-unit">
+				<h1>Hypermarket 13</h1>
+			</div>
+			<div class="navbar navbar-inverse">
+				<div class="navbar-inner ">
+					<ul class="nav">
+					  <li id="product-link"><a href="index.html">Products</a></li>
+					  <li id="stock-link"><a href="stock.html">Stock</a></li>
+					  <li id="inventory-link"><a href="inventory.html">Inventory</a></li>
+					  <li id="statistic-link"><a href="statistics.html">Statistics</a></li>
+					  <li id="statistic-link" class="active"><a href="outlet.html">Outlets</a></li>
+					</ul>
+				</div>
+			</div>
+
+			<div id="outletcontent">
+				<a href="#addNewOutlet" role="button" class="btn" data-toggle="modal">Add New Outlet</a><br />
+				<div id="addNewOutlet" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addNewOutletLabel" aria-hidden="true">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+						<h3 id="addNewOutletLabel">Add New Outlet</h3>
+					</div>
+					<div class="modal-body">
+						<form id ="new-outlet-form" class="form-horizontal">
+							<div class="control-group">
+								<label class="control-label" for="inputOutletName">Outlet name</label>
+								<div class="controls">
+									<input type="text" id="inputOutletName" placeholder="">
+								</div>
+							</div>
+							<div class="control-group">
+								<label class="control-label" for="inputAddress">Address</label>
+								<div class="controls">
+									<input type="text" id="inputAddress" placeholder="">
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+						<button id ="confirm-add-outlet" class="btn btn-primary">Save changes</button>
+					</div>
+				</div>
+				<label for="filter"><br/>Filter :</label>
+				<input class="span4" type="text" id="filter" placeholder="Enter any outlet details"/>
+				<div id="outlettablecontent"></div>
+				<div class="paginator"></div>
+			</div>
+
+			<hr />
+			<footer>
+			<p>CG3002 Hypermarket Project AY12/13 Semester 1</p>
+			</footer>
+		</div>
+	</body>
+
+</html>
