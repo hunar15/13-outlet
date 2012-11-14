@@ -42,9 +42,6 @@ exports.addTransaction = function (req,res) {
 	});
 };
 
-exports.index = function(req, res){
-  res.render('index', { title: 'Express' });
-};
 
 exports.setAsReceived = function(req,res) {
 	restock.setAsReceived(req.body,function(err, rows){
@@ -65,7 +62,7 @@ exports.syncRequests = function (req, res) {
 
 function syncInventory(res) {
 	console.log("Syncing INVENTORY with HQ...");
-	
+
 	var query_2= 'SELECT * from inventory;';
 	connection.query(query_2, function (err2,rows2, fields2) {
 		// body...
