@@ -117,19 +117,29 @@ exports.getPrice = function(req,res) {
 };
 
 exports.syncAtEnd = function (req, res) {
-	sync.syncInventoryAndRestock(function (err, result) {
-		if(!err) {
-			inventory.recomputeSellingPrice(function (err, result) {
-				if(!err) {
-					res.send({"STATUS" : "SUCCESS"});
-				} else {
-					res.send({"STATUS" : "ERROR"});
-				}
-			});
+	var query = 'UPDATE product set status=\'NORMAL\' where status=\'ADDED\';';
+
+	connection.query( query, function  (err3, result3) {
+		// body...
+		if(!err3) {
+			console.log("Status of ADDED products changed to NORMAL");
 		} else {
-			console.log("ERROR encountered while syncing inventory and restock requests");
-			res.send({"STATUS" : "ERROR"});
+			console.log("ERROR : "+ err3);
 		}
+		sync.syncInventoryAndRestock(function (err, result1) {
+			if(!err) {
+				inventory.recomputeSellingPrice(function (err2, result2) {
+					if(!err2) {
+						res.send({"STATUS" : "SUCCESS"});
+					} else {
+						res.send({"STATUS" : "ERROR"});
+					}
+				});
+			} else {
+				console.log("ERROR encountered while syncing inventory and restock requests");
+				res.send({"STATUS" : "ERROR"});
+			}
+		});
 	});
 };
 

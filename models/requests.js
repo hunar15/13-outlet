@@ -37,7 +37,7 @@ exports.viewRequestDetails = function  (args,callback) {
 	var date = args.date;
 
 	if(date !== null) {
-		var query = 'select barcode, quantity from request_details where date = \''+date+'\';',
+		var query = 'select barcode, quantity, received from request_details where date = \''+date+'\';',
 			result ={};
 
 
@@ -46,7 +46,8 @@ exports.viewRequestDetails = function  (args,callback) {
 
 		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "integer","editable":"false"});
 		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "integer", "editable" : "false"});
-
+		result['metadata'].push({"name":"received","label":"Received"});
+		//what metadata is required?
 		connection.query(query, function (err,rows,fields) {
 			// body...
 			if(!err) {
@@ -89,7 +90,7 @@ exports.addRequest =  function(args, callback) {
 					query_2 = '';
 				for(var i in requestList) {
 					var current = requestList[i];
-					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ " "+
+					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ ", \'false\'"+
 							" FROM DUAL WHERE NOT EXISTS(SELECT * FROM request_details WHERE date= CURDATE() AND barcode="+current['barcode']+");";
 				}
 				if(query_2 !== '') {
@@ -103,13 +104,6 @@ exports.addRequest =  function(args, callback) {
 							console.log(err2);
 							callback(true,null);
 						}
-						/*if (errorFlag === 0) {
-							console.log("Request successfully added");
-							
-						} else {
-							console.log("Errors encountered while adding request details");
-							callback(true,null);
-						}*/
 					});
 				} else {
 					console.log("Nothing to RESTOCK");
@@ -150,13 +144,13 @@ exports.deleteRequest = function (args, callback) {
 	}
 	
 };
-
+/*
 exports.setAsReceived = function(args, callback) {
 	/*
 	{
 		request_id : ""
 	}
-	*/
+	
 	
 	var query = "select d.barcode as barcode, d.quantity as quantity from batch_request r  " +
 				" inner join request_details d on r.date =d.date AND r.status=\'DISPATCHED\';";
@@ -202,7 +196,50 @@ exports.setAsReceived = function(args, callback) {
 		}
 	});
 };
+*/
+exports.setAsReceived = function(args, callback) {
+	var date = args.date,
+		barcode = args.barcode;
 
+	if(outlet_id!== null && date!==null && barcode!==null) {
+		var query = "UPDATE request_details SET received=\'true\'' WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
 
+		connection.query(query, function(err,rows, fields) {
+			if(!err) {
+				console.log(query);
+				console.log("Barcode : " + barcode + " RECEIVED");
+				//callback(null,true);
 
+				//check if all products in the batch have been received and update
+				var query2 ="UPDATE batch_request SET status=\'INCOMPLETE\' WHERE AND date=\'"+date+"\' ;";
+
+				connection.query(query2, function(err2,rows2,fields2) {
+					if(!err2) {
+						var query3 = "UPDATE batch_request SET status=\'RECEIVED\' WHERE AND date=\'"+date+"\'"+
+							" AND NOT EXISTS( SELECT * from request_details WHERE AND date=\'"+date+"\' AND received=\'false\')";
+
+						connection.query(query3, function(err3, rows3, fields3) {
+							if(!err3) {
+								console.log("Batch Request COMPLETED");
+								callback(null,true);
+							} else {
+								console.log("Error encountered : " + err3);
+								callback(true,null);
+							}
+						});
+					} else {
+						console.log("Error encountered : "+ err2);
+						callback(true,null);
+					}
+				});
+			} else {
+				console.log("Error encountered : " + err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
+};
 

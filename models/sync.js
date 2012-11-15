@@ -255,7 +255,7 @@ exports.syncInventoryAndRestock = function(callback) {
 					inventory_query = '';
 				for (i=0; i< addedList.length;i++) {
 					var current = addedList[i];
-					product_query += "INSERT INTO product select "+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'NORMAL\'" +
+					product_query += "INSERT INTO product select "+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'ADDED\'" +
 									" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
 					/*if(i==(addedList.length - 1 ))
 						flag = 1;
@@ -294,6 +294,33 @@ exports.syncInventoryAndRestock = function(callback) {
 		
 };
 
+function updateIncompleteRequests(callback) {
+	var query = "SELECT b.date as date, d.barcode as barcode, d.received as received "+
+			"FROM batch_request b INNER JOIN request_details d "+
+			"ON b.date=d.date WHERE b.status=\'INCOMPLETE\';";
+	console.log("Updating INCOMPLETE requests..");
+	connection.query(query, function(err,rows, fields) {
+		if(!err) {
+			console.log("Posting Sync request to HQ...");
+			request.post({url : hq_host+'/syncIncompleteRequests',json :true, body: {'outletid' : outletid, 'incompleteList' : rows}}, function(error,response,body){
+				if(!error) {
+					if(body.status == "COMPLETED") {
+						console.log("Server sync successful");
+						callback(null,true);
+					}
+				} else {
+					console.log("Unable to sync with HQ\nError : " + error);
+					callback(true,null);
+				}
+			});
+		} else {
+			console.log("Errors in retrieving INCOMPLETE stock requests");
+			console.log("ERROR : " + err);
+			callback(true,null);
+		}
+	});
+
+}
 function updateDispatchedRequests(callback) {
 	console.log("Retrieving DISPATCHED requests from HQ..");
 	request.post( {url : hq_host+'/syncDispatchedRequests',json :true, body: {'outletid' : outletid}}, function(error,response,body) {
@@ -312,21 +339,20 @@ function updateDispatchedRequests(callback) {
 					connection.query(query, function (err,rows,fields) {
 						if(!err) {
 							console.log("DISPATCHED requests successfully updated");
-							callback(null,true);
 						} else {
 							console.log("ERROR : " + err);
-							callback(true,null);
 						}
+						updateIncompleteRequests(callback);
 					});
 				} else {
 					console.log("No requests dispatched from HQ side");
-					callback(null,true);
+					updateIncompleteRequests(callback);
 				}
+			}
 		} else {
 			console.log("ERROR while posting request : " + error);
-			callback(true,null);
+			updateIncompleteRequests(callback);
 		}
-	}
 	});
 }
 
@@ -353,7 +379,7 @@ function updateReceivedRequests(callback) {
 					}
 				} else {
 					console.log("Unable to sync with HQ\nError : " + error);
-					callback(error);
+					updateDispatchedRequests(callback);
 				}
 			});
 		} else {
@@ -400,7 +426,7 @@ function syncRequests (callback) {
 			});
 		} else {
 			console.log(err);
-			//callback(true,null);
+			callback(true,null);
 		}
 		//updateReceivedRequests(callback);
 
