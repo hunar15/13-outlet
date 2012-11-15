@@ -14,7 +14,7 @@ exports.viewRequests = function  (callback) {
 	result['data']= [];
 
 	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date","editable":"false"});
-	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "true"});
+	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "false"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
 		if(!err) {
