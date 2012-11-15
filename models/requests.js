@@ -8,12 +8,11 @@ var hq_host = config.hq_host,
 exports.viewRequests = function  (callback) {
 	// body...
 
-	var query = 'select * FROM batch_request;';
+	var query = 'select DATE_FORMAT(date,\'%Y-%m-%d\') as date, status FROM batch_request;';
 	var result = {};
 	result['metadata'] = [];
 	result['data']= [];
 
-	result['metadata'].push({"name":"request_id","label":"Request ID", "datatype" : "integer","editable":"false"});
 	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date","editable":"false"});
 	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "true"});
 	connection.query(query, function  (err, rows, fields) {
@@ -21,16 +20,54 @@ exports.viewRequests = function  (callback) {
 		if(!err) {
 			for( var i in rows) {
 				var current ={};
-				current['id'] = rows[i]['request_id'];
+				current['id'] = rows[i]['date'];
 				current['values'] = rows[i];
 				result['data'].push(current);
 			}
-			callback(err,rows);
+			callback(null,result);
 		} else {
 			console.log(err);
+			callback(true,null);
 		}
 	});
 };
+
+exports.viewRequestDetails = function  (args,callback) {
+	// body...
+	var date = args.date;
+
+	if(date !== null) {
+		var query = 'select barcode, quantity from request_details where date = \''+date+'\';',
+			result ={};
+
+
+		result['metadata'] = [];
+		result['data']= [];
+
+		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "integer","editable":"false"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "integer", "editable" : "false"});
+
+		connection.query(query, function (err,rows,fields) {
+			// body...
+			if(!err) {
+				for(var i in rows) {
+					var current = {};
+					current['id'] = rows[i]['barcode'];
+					current['values'] = rows[i];
+					result['data'].push(current);
+				}
+				callback(null,result);
+			} else {
+				console.log("ERROR : " + err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
+};
+
 exports.addRequest =  function(args, callback) {
 	//packet format
 	/*

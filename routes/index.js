@@ -24,6 +24,35 @@ exports.getProducts = function (req,res) {
 	});
 };
 
+exports.viewRequests = function (req,res) {
+	restock.viewRequests(function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+exports.viewRequestDetails = function (req,res) {
+	restock.viewRequestDetails(req.body, function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.viewTransactions = function (req,res) {
+	transaction.viewTransactions( function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
 exports.getInventory = function (req,res) {
 	inventory.getInventory(function(err,result) {
 		if(!err) {
