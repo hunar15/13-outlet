@@ -1,141 +1,15 @@
 var editableGrid;
 window.onload = function() {
 	initTable();
-	initAddProduct();
-	initAddInventory();
+
 }
 
 function initTable(){
-	$.getJSON( "get/product", function(data){
+	$.getJSON( "get/products", function(data){
 		init(data);
 		editableGrid.setPageIndex(0);
 		editableGrid.filter('');
 	});
-}
-
-function initAddProduct(){
-	$('#confirm-add-product').click(function(){
-		var barcode = $('#inputBarcode').val();
-		var name = $('#inputName').val();
-		var category = $('#inputCategory').val();
-		var manufacturer = $('#inputManufacturer').val();
-		var cost_price = $('#inputPrice').val();
-
-		if (validProductDetails(barcode, name, category, manufacturer, cost_price))
-			$.ajax({
-				url: "/add/product",
-				type: 'POST',
-				data: {
-						"barcode":barcode,
-						"name": name,
-						"category": category,
-						"manufacturer": manufacturer,
-						"cost_price": cost_price
-				},
-				success: function (response) {
-					console.log(response.responseText);
-					initTable();
-					$('#addNewProduct').modal('hide');
-				}
-			});
-	});
-}
-
-function initAddInventory(){
-	$('#confirm-inventory-product').click(function(){
-		var barcode = $('#product-barcode').text();
-		var outlet_ids = $('#outlet-selector').val();
-		var selling_price = $('#inputSellingPrice').val();
-		var min_stock = $('#inputMinStock').val();
-		
-		console.log(barcode);
-		console.log(outlet_ids);
-		console.log(selling_price);
-		console.log(min_stock);
-		if (validInventoryDetails(selling_price,min_stock))
-			$.ajax({
-				url: "/add/inventory",
-				type: 'POST',
-				data: {
-						"product_barcode":barcode,
-						"outlet_ids": outlet_ids,
-						"selling_price": selling_price,
-						"min_stock": min_stock
-				},
-				success: function (response) {
-					$('#addNewInventory').modal('hide');
-					document.getElementById("new-inventory-form").reset();
-				}
-			});
-	});
-}
-function validProductDetails(barcode, name, category, manufacturer, cost_price){
-	var valid = true;
-	if (parseInt(barcode) > 99999999 || barcode.length == 0 || !parseInt(barcode)){ //more than 8 digits
-		console.log('invalid barcode');
-		$('label[for=inputBarcode]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputBarcode]').removeClass('invalid');
-		
-	if (name.length == 0 || name.length > 150){ //more than 8 digits
-		$('label[for=inputName]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputName]').removeClass('invalid');
-		
-	if (category.length == 0 || category.length > 100){
-		$('label[for=inputCategory]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputCategory]').removeClass('invalid');
-		
-	if (parseInt(manufacturer) > 9999 || manufacturer.length == 0 || !parseInt(manufacturer)){
-		$('label[for=inputManufacturer]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputManufacturer]').removeClass('invalid');
-	
-	if (!parseFloat(cost_price)){
-		$('label[for=inputPrice]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputPrice]').removeClass('invalid');
-
-	return valid;
-}
-
-function validInventoryDetails(selling_price,min_stock){
-	var valid = true;
-	var alertmsg = '';
-	if (!parseFloat(selling_price)){
-		$('label[for=inputSellingPrice]').addClass('invalid');
-		valid = false;
-		alertmsg = alertmsg + 'Selling price must be a float! ';
-	}
-	else
-		$('label[for=inputSellingPrice]').removeClass('invalid');
-		
-	if (!parseInt(min_stock)){
-		$('label[for=inputMinStock]').addClass('invalid');
-		valid = false;
-		alertmsg = alertmsg + 'Minimum stock must be an integer!';
-	}
-	else
-		$('label[for=inputMinStock]').removeClass('invalid');
-	
-	if (valid)
-		return true;
-	else
-	{
-		alert(alertmsg);
-		return false;
-	}
 }
 
 function init(data){
@@ -156,14 +30,7 @@ function init(data){
 	
 	editableGrid.load({"metadata": data.metadata,"data": data.data});
 	editableGrid.renderGrid("producttablecontent", "testgrid");
-	
-	editableGrid.setCellRenderer("addinventory", new CellRenderer({render: function(cell, value) { //<a
-		// this action will remove the row, so first find the ID of the row containing this cell 
-		var rowId = editableGrid.getRowId(cell.rowIndex);
-		
-		cell.innerHTML = "<a href=\"#addNewInventory\" data-toggle=\"modal\" onclick=\"addInventory("+cell.rowIndex+"); \" style=\"cursor:pointer\">" +
-						 "<img src=\"images/inventory.png\" border=\"0\" alt=\"delete\" title=\"add inventory row\"/></a>";
-	}})); 	
+
 
 	editableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();

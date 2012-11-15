@@ -30,14 +30,6 @@ function init(data){
 	editableGrid.load({"metadata": data.metadata,"data": data.data});
 	editableGrid.renderGrid("inventorytablecontent", "testgrid");
 	
-	editableGrid.setCellRenderer("discontinue", new CellRenderer({render: function(cell, value) {
-		// this action will remove the row, so first find the ID of the row containing this cell 
-		var rowId = editableGrid.getRowId(cell.rowIndex);
-		
-		cell.innerHTML = "<a onclick=\"if (confirm('Are you sure you want to discontinue this product ? ')) { discontinueProduct("+cell.rowIndex+");} \" style=\"cursor:pointer\">" +
-						 "<img src=\"images/delete.png\" border=\"0\" alt=\"delete\" title=\"Delete row\"/></a>";
-	}})); 
-	
 
 	editableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();
@@ -112,25 +104,4 @@ function init(data){
 	};
 
 	editableGrid.tableRendered = function() { this.updatePaginator(); };
-}
-
-function discontinueProduct(rowIndex) {
-	var barcode = editableGrid.getRowValues(rowIndex).barcode;
-	var outlet_id = editableGrid.getRowValues(rowIndex).outlet_id;
-	console.log(barcode);
-	console.log(outlet_id);
-	$.ajax({
-		url: "/delete/inventory",
-		type: 'POST',
-		data: {
-				"product_barcode": barcode,
-				"outlet_id": outlet_id
-		},
-		success: function (response) {
-			
-			console.log('successfully deleted'+ barcode);
-			console.log(response);
-			editableGrid.remove(rowIndex);	
-		}
-	});
 }

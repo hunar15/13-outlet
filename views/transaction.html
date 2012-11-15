@@ -5,6 +5,8 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<title>EditableGrid - Minimal demo - Creating grid in Javascript</title>
 		<script src="js/jquery.js"></script>
+		<script src="js/bootstrap-dropdown.js"></script>
+		<script src="js/sync.js"></script>
 
 		<script src="js/editablegrid.js"></script>
 		<script src="js/editablegrid_renderers.js" ></script>
@@ -37,8 +39,14 @@
 					  <li id="statistic-link" class="active"><a href="transaction.html">Transactions</a></li>
 					</ul>
 					<ul class="nav pull-right">
-						<li id="sync-link"><a id="sync-tab" href="#"><b>HQ SYNC</b></a></li>
-					</ul>	
+						<li class="dropdown" id="sync-link">
+							<a id="sync-tab" class="dropdown-toggle" data-toggle="dropdown" href="#">HQ SYNC<b class="caret"></b></a>
+							<ul class="dropdown-menu" style="min-width:100px;">
+								<li><a onclick="openingSync();" style="cursor: pointer;" title="Sync inventory, restock & revenue">Shop opening </a></li>
+								<li><a onclick="closingSync();" style="cursor: pointer;" title="Recomputes pricing">Shop closing</a></li>
+							</ul>
+						</li>
+					</ul>			
 				</div>
 			</div>
 

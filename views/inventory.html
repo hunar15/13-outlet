@@ -7,7 +7,9 @@
 		
 		<script src="http://code.jquery.com/jquery-1.8.2.js"></script>
 		<script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+		<script src="js/bootstrap-dropdown.js"></script>
 		<script src="js/inventory.js"></script>
+		<script src="js/sync.js"></script>
 		
 		<script src="js/editablegrid.js"></script>
 		<script src="js/editablegrid_renderers.js" ></script>
@@ -40,8 +42,14 @@
 					  <li id="statistic-link"><a href="transaction.html">Transactions</a></li>
 					</ul>
 					<ul class="nav pull-right">
-						<li id="sync-link"><a id="sync-tab" href="#"><b>HQ SYNC</b></a></li>
-					</ul>	
+						<li class="dropdown" id="sync-link">
+							<a id="sync-tab" class="dropdown-toggle" data-toggle="dropdown" href="#">HQ SYNC<b class="caret"></b></a>
+							<ul class="dropdown-menu" style="min-width:100px;">
+								<li><a onclick="openingSync();" style="cursor: pointer;" title="Sync inventory, restock & revenue">Shop opening </a></li>
+								<li><a onclick="closingSync();" style="cursor: pointer;" title="Recomputes pricing">Shop closing</a></li>
+							</ul>
+						</li>
+					</ul>			
 				</div>
 			</div>
 
