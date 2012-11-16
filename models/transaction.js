@@ -71,3 +71,34 @@ exports.addTransaction = function (args, callback) {
 	}
 };
 
+exports.viewTransactions = function (callback) {
+	// body...
+	var query = 'select t.id as id, t.cashier_id as cashier_id, DATE_FORMAT(t.date,\'%Y-%m-%d\') as date, '+
+			' d.barcode as barcode, d.quantity as quantity, d.price as price'+
+			' FROM transaction t inner join transaction_details d ON t.id=d.id ;';
+	var result = {};
+	result['metadata'] = [];
+	result['data']= [];
+
+	result['metadata'].push({"name":"id","label":"Transaction ID", "datatype" : "integer","editable":"false"});
+	result['metadata'].push({"name":"cashier_id","label":"Cashier ID", "datatype" : "string", "editable" : "false"});
+	result['metadata'].push({"name":"date","label":"Transaction Date", "datatype" : "date","editable":"false"});
+	result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "integer", "editable" : "false"});
+	result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "integer","editable":"false"});
+	result['metadata'].push({"name":"price","label":"Price", "datatype" : "integer", "editable" : "false"});
+	connection.query(query, function  (err, rows, fields) {
+		// body...
+		if(!err) {
+			for( var i in rows) {
+				var current ={};
+				current['id'] = rows[i]['date'];
+				current['values'] = rows[i];
+				result['data'].push(current);
+			}
+			callback(null,result);
+		} else {
+			console.log(err);
+			callback(true,null);
+		}
+	});
+};

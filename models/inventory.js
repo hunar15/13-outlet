@@ -111,7 +111,7 @@ exports.recomputeSellingPrice = function(callback) {
 	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST( p.cost_price, ( ' +
 					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 1.5 * i.min_stock ) ' +
 					'),2) AS new_price FROM product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
-					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode;';
+					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode WHERE p.status <> \'ADDED\';';
 
 	connection.query(select_query,function (err, rows, fields) {
 		if(!err) {
