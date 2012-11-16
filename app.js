@@ -44,7 +44,7 @@ app.get('/get/transactions',routes.viewTransactions);
 app.post('/get/requests/details',routes.viewRequestDetails);
 app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
-app.get('/stock/setAsReceived', routes.setAsReceived);
+app.post('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);
 app.post('/add/transaction', routes.addTransaction);
 

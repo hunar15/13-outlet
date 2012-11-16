@@ -15,12 +15,13 @@ exports.viewRequests = function  (callback) {
 
 	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date","editable":"false"});
 	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "false"});
+	result['metadata'].push({"name":"details","label":"View details"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
 		if(!err) {
 			for( var i in rows) {
 				var current ={};
-				current['id'] = rows[i]['date'];
+				current['id'] = i;
 				current['values'] = rows[i];
 				result['data'].push(current);
 			}
@@ -44,8 +45,8 @@ exports.viewRequestDetails = function  (args,callback) {
 		result['metadata'] = [];
 		result['data']= [];
 
-		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "integer","editable":"false"});
-		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "integer", "editable" : "false"});
+		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string","editable":"false"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string", "editable" : "false"});
 		result['metadata'].push({"name":"received","label":"Received"});
 		//what metadata is required?
 		connection.query(query, function (err,rows,fields) {
@@ -202,8 +203,8 @@ exports.setAsReceived = function(args, callback) {
 		barcode = args.barcode,
 		quantity = args.quantity;
 
-	if(outlet_id!== null && date!==null && barcode!==null) {
-		var query = "UPDATE request_details SET received=\'true\'' WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
+	if(quantity!== null && date!==null && barcode!==null) {
+		var query = "UPDATE request_details SET received=1 WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
 
 		connection.query(query, function(err,rows, fields) {
 			if(!err) {

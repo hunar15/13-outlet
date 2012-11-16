@@ -6,7 +6,7 @@ window.onload = function() {
 }
 
 function initTable(){
-	$.getJSON( "get/request/all", function(data){
+	$.getJSON( "get/requests", function(data){
 		init(data);
 		editableGrid.setPageIndex(0);
 		editableGrid.filter('');
@@ -18,10 +18,9 @@ function initSetReceived(){
 		var batch_received=[];
 		$('.received-check').each(function(k,v){
 			if ($(v).attr('checked')=='checked')
-				batch_received.push($(v).attr('id').substring(6));
+				batch_received.push([$(v).attr('id').substring(6),$(v).attr('data-quantity')]);
 		});
 
-		var outlet_id = $('#outlet-id').text();
 		var date = $('#restock-date').text();
 		
 		if (batch_received.length == 0)
@@ -30,12 +29,12 @@ function initSetReceived(){
 		$.each(batch_received, function(k,v){
 			
 			$.ajax({
-				url: "/setAsReceived",
+				url: "/stock/setAsReceived",
 				type: 'POST',
 				data: {
-					"outlet_id": outlet_id,
 					"date": date,
-					"barcode": v
+					"barcode": v[0],
+					"quantity": v[1]
 				},
 				success: function (response) {
 					if (k==(batch_received.length - 1)){
@@ -68,22 +67,7 @@ function init(data){
 	
 	editableGrid.load({"metadata": data.metadata,"data": data.data});
 	editableGrid.renderGrid("restocktablecontent", "testgrid");
-	
-	editableGrid.setCellRenderer("approve", new CellRenderer({render: function(cell, value) {
-		// this action will remove the row, so first find the ID of the row containing this cell 
-		var rowId = editableGrid.getRowId(cell.rowIndex);
-		//##########
-		//insert if condition here to check if batch has already been approved
-		//##########
-		var status = editableGrid.getRowValues(rowId).status;
-		if (status == "FORWARDED")
-			cell.innerHTML = "<img src=\"images/approved.png\" border=\"0\" title=\"Forwarded to supplier\"/></a>";
-		else if (status == "DISPATCHED")
-			cell.innerHTML = "<img src=\"images/dispatched.png\" border=\"0\" title=\"Forwarded to supplier\"/></a>";
-		else
-			cell.innerHTML = "<a onclick=\"if (confirm('Are you sure you want to approve this batch ? ')) { approveBatch("+cell.rowIndex+");} \" style=\"cursor:pointer\">" +
-						 "<img src=\"images/approve.png\" border=\"0\" title=\"Approve row\"/></a>";
-	}})); 
+
 	
 	editableGrid.setCellRenderer("details", new CellRenderer({render: function(cell, value) {
 		var rowId = editableGrid.getRowId(cell.rowIndex);
@@ -97,7 +81,7 @@ function init(data){
 	editableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();
 		var nbPages = editableGrid.getPageCount();
-		console.log(nbPages);
+
 
 		// get interval
 		var interval = editableGrid.getSlidingPageInterval(10);
@@ -188,8 +172,9 @@ function initDetail(data){
 	detailedEditableGrid.setCellRenderer("received", new CellRenderer({render: function(cell, value) {
 		// this action will remove the row, so first find the ID of the row containing this cell 
 		var rowId = detailedEditableGrid.getRowId(cell.rowIndex);
+		var quantity = detailedEditableGrid.getRowValues(cell.rowIndex).quantity;
 		if (value==0)
-			cell.innerHTML = "<input class='received-check' id='check-"+rowId+"' type='checkbox'/>";
+			cell.innerHTML = "<input class='received-check' id='check-"+rowId+"' data-quantity='"+quantity+"' type='checkbox'/>";
 		else
 			cell.innerHTML = "<input type='checkbox' checked='true' disabled='true'/>";
 	}})); 
@@ -197,7 +182,7 @@ function initDetail(data){
 	detailedEditableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();
 		var nbPages = detailedEditableGrid.getPageCount();
-		console.log(nbPages);
+
 
 		// get interval
 		var interval = detailedEditableGrid.getSlidingPageInterval(10);
@@ -267,47 +252,24 @@ function initDetail(data){
 }
 
 
-function approveBatch(rowIndex) {
-	var outlet_id = editableGrid.getRowValues(rowIndex).outlet_id;
-	var date = editableGrid.getRowValues(rowIndex).date;
-	$.ajax({
-		url: "/request/approve",
-		type: 'POST',
-		data: {
-			"outlet_id": outlet_id,
-			"date": date
-		},
-		success: function (response) {
-			initTable();
-		}
-	});
-}
 
 function generateDetails(rowIndex) {
-	var outlet_id = editableGrid.getRowValues(rowIndex).outlet_id;
-	var outlet_name = editableGrid.getRowValues(rowIndex).s_name;
 	var date = editableGrid.getRowValues(rowIndex).date;
 	var status = editableGrid.getRowValues(rowIndex).status;
-	if (status != "FORWARDED" && status != "DISPATCHED")
-		$('#confirm-checked-product').attr("disabled",true);
-	else
-		$('#confirm-checked-product').attr("disabled",false);
-		
-	console.log(outlet_id);
-	console.log(date);
+	// if (status != "FORWARDED" && status != "DISPATCHED")
+		// $('#confirm-checked-product').attr("disabled",true);
+	// else
+		// $('#confirm-checked-product').attr("disabled",false);
 	$.ajax({
-		url: "/get/requestDetails", //change this
+		url: "/get/requests/details",
 		type: 'POST',
 		data: {
-			"outlet_id": outlet_id,
 			"date": date
 		},
 		success: function (response) {
 			initDetail(response);
 			detailedEditableGrid.setPageIndex(0);
 			detailedEditableGrid.filter('');
-			$('#outlet-id').text(outlet_id);
-			$('#outlet-name').text(outlet_name);
 			$('#restock-date').text(date);
 			$('#restockDetails').modal('show');
 		}

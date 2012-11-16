@@ -6,6 +6,7 @@
 		<title>EditableGrid - Minimal demo - Creating grid in Javascript</title>
 		<script src="js/jquery.js"></script>
 		<script src="js/bootstrap-dropdown.js"></script>
+		<script src="js/transaction.js"></script>
 		<script src="js/sync.js"></script>
 
 		<script src="js/editablegrid.js"></script>
@@ -49,8 +50,34 @@
 					</ul>			
 				</div>
 			</div>
-
-			<div id="statcontent">
+			<a href="#addNewProduct" role="button" class="btn" data-toggle="modal">Add New Product</a>
+			<div id="addNewProduct" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addNewProductLabel" aria-hidden="true">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					<h3 id="addNewProductLabel">Add New Transaction</h3>
+				</div>
+				<div class="modal-body">
+					<form id ="new-product-form" class="form-horizontal">
+						<div class="control-group">
+							<label class="control-label" for="inputName">Barcode</label>
+							<div class="controls">
+								<input type="text" id="inputName" placeholder="Product name">
+							</div>
+						</div>
+						<div class="control-group">
+							<label class="control-label" for="inputPrice">Quantity</label>
+							<div class="controls">
+								<input type="text" id="inputPrice" placeholder="Price in $X.XX">
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+					<button id ="confirm-add-product" class="btn btn-primary">Save changes</button>
+				</div>
+			</div>
+			<div id="transactioncontent">
 			</div>
 			<hr />
 			<footer>
