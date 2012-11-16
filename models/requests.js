@@ -199,7 +199,8 @@ exports.setAsReceived = function(args, callback) {
 */
 exports.setAsReceived = function(args, callback) {
 	var date = args.date,
-		barcode = args.barcode;
+		barcode = args.barcode,
+		quantity = args.quantity;
 
 	if(outlet_id!== null && date!==null && barcode!==null) {
 		var query = "UPDATE request_details SET received=\'true\'' WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
@@ -212,6 +213,7 @@ exports.setAsReceived = function(args, callback) {
 
 				//check if all products in the batch have been received and update
 				var query2 ="UPDATE batch_request SET status=\'INCOMPLETE\' WHERE AND date=\'"+date+"\' ;";
+					query2 += "UPDATE inventory SET stock=stock+"+quantity+" WHERE barcode="+barcode+";";
 
 				connection.query(query2, function(err2,rows2,fields2) {
 					if(!err2) {
