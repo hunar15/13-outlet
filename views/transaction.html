@@ -6,6 +6,7 @@
 		<title>EditableGrid - Minimal demo - Creating grid in Javascript</title>
 		<script src="js/jquery.js"></script>
 		<script src="js/bootstrap-dropdown.js"></script>
+		<script src="js/bootstrap-modal.js"></script>
 		<script src="js/transaction.js"></script>
 		<script src="js/sync.js"></script>
 
@@ -50,33 +51,29 @@
 					</ul>			
 				</div>
 			</div>
-			<a href="#addNewProduct" role="button" class="btn" data-toggle="modal">Add New Product</a>
-			<div id="addNewProduct" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addNewProductLabel" aria-hidden="true">
+			<a href="#addNewTransaction" role="button" class="btn" data-toggle="modal">New Transaction</a>
+			<div id="addNewTransaction" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="addNewTransactionLabel" aria-hidden="true">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-					<h3 id="addNewProductLabel">Add New Transaction</h3>
+					<h3 id="addNewTransactionLabel">Add New Transaction</h3>
 				</div>
 				<div class="modal-body">
-					<form id ="new-product-form" class="form-horizontal">
-						<div class="control-group">
-							<label class="control-label" for="inputName">Barcode</label>
-							<div class="controls">
-								<input type="text" id="inputName" placeholder="Product name">
-							</div>
-						</div>
-						<div class="control-group">
-							<label class="control-label" for="inputPrice">Quantity</label>
-							<div class="controls">
-								<input type="text" id="inputPrice" placeholder="Price in $X.XX">
-							</div>
-						</div>
+					<table class="table" id="item-table"><thead><tr><th class="span2">Product Name</th><th class="span2">Quantity</th><th class="span2">Unit Price</th><th class="span1">Subtotal</th><th></th></tr></thead></table><hr/>
+					<div>Total: $<span id = "total-price">0</span></div><hr/>
+					<form id ="new-item-form" class="form-horizontal" onsubmit="return false;">
+						<input type="text" class="span2" id="inputBarcode" placeholder="Barcode" /> &nbsp;
+						<input type="text" class="span2" id="inputQuantity" placeholder="Quantity" /> &nbsp;
+						<button class="btn" id = "add-item">Add</button>
 					</form>
 				</div>
 				<div class="modal-footer">
 					<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-					<button id ="confirm-add-product" class="btn btn-primary">Save changes</button>
+					<button id ="confirm-checkout" class="btn btn-primary">Checkout</button>
 				</div>
 			</div>
+			
+			<label for="filter"><br/>Filter :</label>
+			<input class="span4" type="text" id="filter" placeholder="Enter any transaction details"/>
 			<div id="transactioncontent">
 			</div>
 			<hr />

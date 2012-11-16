@@ -41,8 +41,10 @@ exports.addTransaction = function (args, callback) {
 						var query_2 = '';
 						for(var i in itemList) {
 							var current = itemList[i];
-							query_2 += 'INSERT INTO transaction_details VALUES('+rows2.insertId+','+current.barcode+','+current.quantity+','+current.price+');';
+							query_2 = query_2 + 'INSERT INTO transaction_details VALUES('+rows2.insertId+','+current.barcode+','+current.quantity+','+current.price+');';
+
 						}
+						console.log(query_2);
 						connection.query(query_2, function(err3,rows3, fields3) {
 							if(!err3) {
 								console.log("Transaction details successfully logged");
@@ -80,12 +82,12 @@ exports.viewTransactions = function (callback) {
 	result['metadata'] = [];
 	result['data']= [];
 
-	result['metadata'].push({"name":"id","label":"Transaction ID", "datatype" : "integer","editable":"false"});
+	result['metadata'].push({"name":"id","label":"Transaction ID", "datatype" : "string","editable":"false"});
 	result['metadata'].push({"name":"cashier_id","label":"Cashier ID", "datatype" : "string", "editable" : "false"});
 	result['metadata'].push({"name":"date","label":"Transaction Date", "datatype" : "date","editable":"false"});
-	result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "integer", "editable" : "false"});
-	result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "integer","editable":"false"});
-	result['metadata'].push({"name":"price","label":"Price", "datatype" : "integer", "editable" : "false"});
+	result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string", "editable" : "false"});
+	result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string","editable":"false"});
+	result['metadata'].push({"name":"price","label":"Price", "datatype" : "string", "editable" : "false"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
 		if(!err) {

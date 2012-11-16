@@ -1,7 +1,12 @@
 var editableGrid;
+var cashier = 3002;
+var itemIdx = 0;
+var totalPrice = 0;
+var global;
 window.onload = function() {
 	initTable();
-	initAddProduct();
+	initAddItem();
+	initAddTransaction();
 	initAddInventory();
 }
 
@@ -13,29 +18,76 @@ function initTable(){
 	});
 }
 
-function initAddProduct(){
-	$('#confirm-add-product').click(function(){
-		var name = $('#inputName').val();
-		var category = $('#inputCategory').val();
-		var manufacturer = $('#inputManufacturer').val();
-		var cost_price = $('#inputPrice').val();
-
-		if (validProductDetails(name, category, manufacturer, cost_price))
-			$.ajax({
-				url: "/add/product",
-				type: 'POST',
-				data: {
-						"name": name,
-						"category": category,
-						"manufacturer": manufacturer,
-						"cost_price": cost_price
-				},
-				success: function (response) {
-					console.log(response.responseText);
-					initTable();
-					$('#addNewProduct').modal('hide');
+function initAddItem(){
+	$('#add-item').click(function(){
+		var barcode = $('#inputBarcode').val();
+		var quantity = $('#inputQuantity').val();
+		if (barcode == '' || quantity == '') return;
+		$.ajax({
+			url: "/getPrice",
+			type: 'POST',
+			data: {
+					"cashier": cashier,
+					"barcode": barcode
+			},
+			success: function (response) {
+				if (response.cashier){
+					
+					var unitprice = response.price;
+					var collectiveprice = parseFloat(unitprice).toFixed(2) * parseInt(quantity);
+					totalPrice = totalPrice + collectiveprice;
+					$('#total-price').text(totalPrice);
+					$('#item-table').append('<tr barcode="'+barcode+'" class="items" id="item-'+itemIdx+'">'+
+					'<td>'+response.name+'</td>'+
+					'<td>'+quantity+'</td>'+
+					'<td>'+unitprice+'</td>'+
+					'<td id="collective-'+itemIdx+'">'+collectiveprice+'</td>'+
+					'<td><img onclick="removeItem('+itemIdx+')" src="images/delete.png" style="cursor:pointer;" title="Delete item"/></td>');
+					$('#new-item-form')[0].reset();
+					itemIdx++;
 				}
-			});
+				else
+					console.log('no such barcode');
+			}
+		});
+	});
+}
+
+function removeItem(index){
+
+	var contents = $('td#collective-'+index).text();
+	$('#item-'+index).remove();	
+	totalPrice = totalPrice - parseFloat(contents).toFixed(2);
+	$('#total-price').text(totalPrice);	
+}
+
+function initAddTransaction(){
+	$('#confirm-checkout').click(function(){
+		var itemList = [];
+		$('.items').each(function(idx,item){
+			var item_obj = new Object();
+			item_obj.barcode = $(item).attr('barcode');
+			item_obj.quantity = $(item).children()[1].textContent;
+			item_obj.price = $(item).children()[2].textContent;
+			itemList.push(item_obj);
+		});
+		$.ajax({
+			url: "/add/transaction",
+			type: 'POST',
+			data: {
+				"cashier":cashier,
+				"list":itemList
+			},
+			success: function (response) {
+				initTable();
+				$('#addNewTransaction').modal('hide');
+				itemIdx = 0;
+				$('.items').remove();
+				totalPrice = 0;
+				$('#total-price').text(totalPrice);	
+			}
+		});
+
 	});
 }
 
