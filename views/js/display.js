@@ -19,7 +19,9 @@ function initTable(){
 
 function initAddDisplay(){
 	$('#confirm-add-display').click(function(){
-		var display_id;
+		var display_id = $('#inputId').val();
+		var barcode = $('#inputBarcode').val();
+		var description = $('#inputDescription').val();
 		$.ajax({
 			url: "/add/display",
 			type: 'POST',
@@ -83,7 +85,7 @@ function initEditDisplay(){
 			},
 			success: function (response) {
 				initTable();
-				$('#editNewDisplay').modal('hide');
+				$('#edit-display').modal('hide');
 			}
 		});
 
@@ -114,7 +116,7 @@ function init(data){
 		
 		cell.innerHTML = "<a href=\"#edit-display\" data-toggle=\"modal\" onclick=\"editDisplay("+cell.rowIndex+"); \" style=\"cursor:pointer\">" +
 						"<img src=\"images/edit.png\" border=\"0\" title=\"Edit price display\"/></a>"+
-						"&nbsp;&nbsp;<a onclick=\"if (confirm('Are you sure you want to discontinue this display ? ')) { deleteDisplay("+cell.rowIndex+");} \" style=\"cursor:pointer\">" +
+						"&nbsp;&nbsp;<a onclick=\"if (confirm('Are you sure you want to delete this display ? ')) { deleteDisplay("+cell.rowIndex+");} \" style=\"cursor:pointer\">" +
 						"<img src=\"images/delete.png\" border=\"0\" title=\"Delete price display\"/></a>";
 	}})); 
 	editableGrid.updatePaginator = function () {
