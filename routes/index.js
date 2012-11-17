@@ -36,8 +36,8 @@ exports.getAllDisplayUnits = function (req,res) {
 	});
 };
 
-exports.assignProductToDisplayUnit = function (req,res) {
-	display.assignProductToDisplayUnit(req.body,function(err,result) {
+exports.updateDisplayUnit = function (req,res) {
+	display.updateDisplayUnit(req.body,function(err,result) {
 		if(!err) {
 			res.send(result);
 		} else {

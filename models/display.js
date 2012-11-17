@@ -58,23 +58,25 @@ exports.getAllDisplayUnits = function (callback) {
 	});
 };
 
-exports.assignProductToDisplayUnit = function  (args,callback) {
+exports.updateDisplayUnit = function  (args,callback) {
 	// body...
 
 	var display_id = args.display_id,
-		barcode = args.barcode;
+		barcode = args.barcode,
+		description = args.description;
+
 
 	if(display_id!==null && barcode!==null) {
-		var query = "SELECT barcode from product WHERE display_id="+display_id+";";
+		var query = "SELECT display_id from display WHERE barcode="+barcode+";";
 
 		connection.query(query, function (err,rows,fields) {
 			// body...
 			if(!err) {
 				query ='';
 				if(rows.length !== 0) {
-					query = "UPDATE product set display_id=NULL where barcode="+rows[0].barcode+";";
+					query = "UPDATE display set barcode=NULL where display_id="+rows[0].display_id+";";
 				}
-				query += "UPDATE product set display_id="+display_id+" where barcode="+barcode+";";
+				query += "UPDATE display set barcode="+barcode+",description="+description+" where display_id="+display_id+";";
 
 				connection.query(query, function (err2,rows2,fields2) {
 					if(!err2) {

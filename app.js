@@ -44,7 +44,7 @@ app.get('/get/transactions',routes.viewTransactions);
 app.get('/add/display',routes.addDisplayUnit);
 
 app.post('/deleteDisplayUnit',routes.deleteDisplayUnit);
-app.post('/assignProductToDisplay', routes.assignProductToDisplayUnit);
+app.post('/updateDisplayUnit', routes.updateDisplayUnitUnit);
 app.post('/get/requests/details',routes.viewRequestDetails);
 app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
