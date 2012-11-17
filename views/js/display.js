@@ -31,6 +31,7 @@ function initAddDisplay(){
 				"description":description
 			},
 			success: function (response) {
+				$('#new-display-form')[0].reset();
 				initTable();
 				$('#addNewDisplay').modal('hide');
 			}
