@@ -36,11 +36,15 @@ app.get('/syncAtStart', routes.syncAtStart);
 app.get('/syncAtEnd', routes.syncAtEnd);
 
 app.get('/get/products',routes.getProducts);
+app.get('/get/display',routes.getAllDisplayUnits);
 app.get('/get/inventory',routes.getInventory);
 app.get('/get/requests',routes.viewRequests);
 app.get('/get/transactions',routes.viewTransactions);
 
+app.get('/add/display',routes.addDisplayUnit);
 
+app.post('/deleteDisplayUnit',routes.deleteDisplayUnit);
+app.post('/assignProductToDisplay', routes.assignProductToDisplayUnit);
 app.post('/get/requests/details',routes.viewRequestDetails);
 app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);

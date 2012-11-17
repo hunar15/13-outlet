@@ -7,13 +7,55 @@ var mysql      = require('mysql'),
 	inventory = require('../models/inventory'),
 	transaction = require('../models/transaction'),
 	product = require('../models/product'),
-	sync = require('../models/sync');
+	sync = require('../models/sync'),
+	display = require('../models/display');
 var config = require('../config/config'),
 	connection = config.connection;
 var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
 
+
+exports.addDisplayUnit = function (req,res) {
+	display.addDisplayUnit(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.getAllDisplayUnits = function (req,res) {
+	display.getAllDisplayUnits(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.assignProductToDisplayUnit = function (req,res) {
+	display.assignProductToDisplayUnit(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.deleteDisplayUnit = function (req,res) {
+
+	display.deleteDisplayUnit(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 exports.getProducts = function (req,res) {
 	product.getProducts(req.body,function(err,result) {
 		if(!err) {
