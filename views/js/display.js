@@ -5,6 +5,7 @@ var totalPrice = 0;
 window.onload = function() {
 	initTable();
 	initAddDisplay();
+	initEditDisplay();
 }
 
 function initTable(){
@@ -15,74 +16,21 @@ function initTable(){
 	});
 }
 
-function initAddItem(){
-
-	$('#add-display').click(function(){
-		var barcode = $('#inputBarcode').val();
-		var quantity = $('#inputQuantity').val();
-		if (barcode == '' || quantity == ''){
-			$('#prompt-error').show();
-			return;
-		}
-		else
-			$('#prompt-error').hide();
-		$.ajax({
-			url: "/getPrice",
-			type: 'POST',
-			data: {
-					"cashier": cashier,
-					"barcode": barcode
-			},
-			success: function (response) {
-				if (response.cashier){
-					
-					var unitprice = response.price;
-					var collectiveprice = parseFloat(unitprice).toFixed(2) * parseInt(quantity);
-					totalPrice = totalPrice + collectiveprice;
-					$('#total-price').text(totalPrice);
-					$('#item-table').append('<tr barcode="'+barcode+'" class="items" id="item-'+itemIdx+'">'+
-					'<td>'+response.name+'</td>'+
-					'<td>'+quantity+'</td>'+
-					'<td>'+unitprice+'</td>'+
-					'<td id="collective-'+itemIdx+'">'+collectiveprice+'</td>'+
-					'<td><img onclick="removeItem('+itemIdx+')" src="images/delete.png" style="cursor:pointer;" title="Delete item"/></td>');
-					$('#new-item-form')[0].reset();
-					itemIdx++;
-				}
-				else
-					alert('No such barcode');
-			}
-		});
-	});
-
-}
-
 
 function initAddDisplay(){
 	$('#confirm-add-display').click(function(){
-		var itemList = [];
-		var display_id 
-		$('.items').each(function(idx,item){
-			var item_obj = new Object();
-			item_obj.barcode = $(item).attr('barcode');
-			item_obj.quantity = $(item).children()[1].textContent;
-			item_obj.price = $(item).children()[2].textContent;
-			itemList.push(item_obj);
-		});
+		var display_id;
 		$.ajax({
 			url: "/add/display",
 			type: 'POST',
 			data: {
-				"cashier":cashier,
-				"list":itemList
+				"display_id":display_id,
+				"barcode":barcode,
+				"description":description
 			},
 			success: function (response) {
 				initTable();
-				$('#addNewTransaction').modal('hide');
-				itemIdx = 0;
-				$('.items').remove();
-				totalPrice = 0;
-				$('#total-price').text(totalPrice);	
+				$('#addNewDisplay').modal('hide');
 			}
 		});
 
@@ -92,11 +40,6 @@ function initAddDisplay(){
 		$('#inputBarcode').autocomplete({
 			source: data,
 			minLength: 0,
-			// change: function (event, ui) {
-				// if (!ui.item) {
-					 // $(this).val('');
-				// }
-			// },
 			select: function( event, ui ) {
                 $( "#inputBarcode" ).val( ui.item.label ); 
                 return false;
@@ -108,7 +51,43 @@ function initAddDisplay(){
                 .append( "<a><b>" + item.label + "</b> " + item.value + "</a>" )
                 .appendTo( ul );
         };
+		$('#edit-barcode').autocomplete({
+			source: data,
+			minLength: 0,
+			select: function( event, ui ) {
+                $( "#edit-barcode" ).val( ui.item.label ); 
+                return false;
+            }
+		})
+		.data( "autocomplete" )._renderItem = function( ul, item ) {
+            return $( "<li>" )
+                .data( "item.autocomplete", item )
+                .append( "<a><b>" + item.label + "</b> " + item.value + "</a>" )
+                .appendTo( ul );
+        };
 	});	
+}
+
+function initEditDisplay(){
+	$('#confirm-edit-display').click(function(){
+		var display_id = $('#edit-display-id').val();
+		var barcode = $('#edit-barcode').val();
+		var description = $('#edit-description').val();
+		$.ajax({
+			url: "/updateDisplayUnit",
+			type: 'POST',
+			data: {
+				"display_id":display_id,
+				"barcode":barcode,
+				"description":description
+			},
+			success: function (response) {
+				initTable();
+				$('#editNewDisplay').modal('hide');
+			}
+		});
+
+	});
 }
 
 function init(data){
@@ -130,7 +109,14 @@ function init(data){
 	editableGrid.load({"metadata": data.metadata,"data": data.data});
 	editableGrid.renderGrid("transactioncontent", "testgrid");
 
-
+	editableGrid.setCellRenderer("edit", new CellRenderer({render: function(cell, value) { 
+		var rowId = editableGrid.getRowId(cell.rowIndex);
+		
+		cell.innerHTML = "<a href=\"#edit-display\" data-toggle=\"modal\" onclick=\"editDisplay("+cell.rowIndex+"); \" style=\"cursor:pointer\">" +
+						"<img src=\"images/edit.png\" border=\"0\" title=\"Edit price display\"/></a>"+
+						"&nbsp;&nbsp;<a onclick=\"if (confirm('Are you sure you want to discontinue this display ? ')) { deleteDisplay("+cell.rowIndex+");} \" style=\"cursor:pointer\">" +
+						"<img src=\"images/delete.png\" border=\"0\" title=\"Delete price display\"/></a>";
+	}})); 
 	editableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();
 		var nbPages = editableGrid.getPageCount();
@@ -201,4 +187,28 @@ function init(data){
 	};
 
 	editableGrid.tableRendered = function() { this.updatePaginator(); };
+}
+
+function editDisplay(rowIndex) {
+	var display_id = editableGrid.getRowValues(rowIndex).display_id;
+	var barcode = editableGrid.getRowValues(rowIndex).barcode;
+	var description = editableGrid.getRowValues(rowIndex).description;
+	$('#edit-display-id').val(display_id);
+	$('#edit-description').text(description);
+	$('#edit-barcode').val(barcode);
+}
+
+
+function deleteDisplay(rowIndex) {
+	var display_id = editableGrid.getRowValues(rowIndex).display_id;
+	$.ajax({
+		url: "/deleteDisplayUnit",
+		type: 'POST',
+		data: {
+				"display_id": display_id
+		},
+		success: function (response) {
+			initTable();
+		}
+	});
 }
