@@ -41,7 +41,7 @@ app.get('/get/inventory',routes.getInventory);
 app.get('/get/requests',routes.viewRequests);
 app.get('/get/transactions',routes.viewTransactions);
 
-app.get('/add/display',routes.addDisplayUnit);
+app.post('/add/display',routes.addDisplayUnit);
 
 app.post('/deleteDisplayUnit',routes.deleteDisplayUnit);
 app.post('/updateDisplayUnit', routes.updateDisplayUnit);

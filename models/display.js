@@ -2,15 +2,31 @@ var config = require('../config/config');
 
 var connection = config.connection;
 
-exports.addDisplayUnit = function (callback) {
+exports.addDisplayUnit = function (args,callback) {
 	// body...
-	var query = "INSERT INTO display VALUES();";
+	var barcode = args.barcode,
+		description = args.description;
+
+	var query = "SELECT display_id from display WHERE barcode="+barcode+";";
 
 	connection.query(query, function (err,rows,fields) {
 		// body...
 		if(!err) {
-			console.log("Display Unit with ID : " + rows.insertId + " added");
-			callback(null,true);
+			query ='';
+			if(rows.length !== 0) {
+				query = "UPDATE display set barcode=NULL where display_id="+rows[0].display_id+";";
+			}
+			query += "INSERT INTO display(barcode,description) VALUES("+barcode+",\'"+description+"\');";
+
+			connection.query(query, function (err2,rows2,fields2) {
+				if(!err2) {
+					console.log("Display Unit with ID : " + rows2.insertId + " added");
+					callback(null,rows2);
+				} else {
+					console.log("ERROR : " +err2);
+					callback(true,null);
+				}
+			});
 		} else {
 			console.log("ERROR : " +err);
 			callback(true,null);
@@ -46,11 +62,23 @@ exports.getAllDisplayUnits = function (callback) {
 	// body...
 
 	var query = "SELECT * from display;";
+	var result = {};
 
+	result['metadata'] = [];
+	result['data']= [];
+	result['metadata'].push({"name": "display_id", "label" : "Display ID", "datatype" : "integer"});
+	result['metadata'].push({"name": "barcode", "label" : "Barcode", "datatype" : "integer"});
+	result['metadata'].push({"name": "description", "label" : "Description", "datatype" : "string"});
 	connection.query(query, function (err,rows,fields) {
 		// body...
 		if(!err) {
-			callback(null,rows);
+			for(var i in rows) {
+				var current = {};
+				current['id'] = rows[i]['display_id'];
+				current['values'] = rows[i];
+				result['data'].push(current);
+			}
+			callback(null,result);
 		} else {
 			console.log("ERROR : " +err);
 			callback(true,null);

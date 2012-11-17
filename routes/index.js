@@ -17,7 +17,7 @@ var request = require('request'),
 
 
 exports.addDisplayUnit = function (req,res) {
-	display.addDisplayUnit(function(err,result) {
+	display.addDisplayUnit(req.body,function(err,result) {
 		if(!err) {
 			res.send(result);
 		} else {
