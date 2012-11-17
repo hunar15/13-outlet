@@ -116,6 +116,16 @@ exports.getPrice = function(req,res) {
 	});
 };
 
+exports.getBarcodes = function (req, res) {
+	product.getBarcodes(req.body, function(err,result){
+		if(err !== null) {
+			res.send(err);
+		} else {
+			res.send(result);
+		}
+	});
+}
+
 exports.syncAtEnd = function (req, res) {
 	var query = 'UPDATE product set status=\'NORMAL\' where status=\'ADDED\';';
 

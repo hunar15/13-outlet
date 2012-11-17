@@ -2,7 +2,6 @@ var editableGrid;
 var cashier = 3002;
 var itemIdx = 0;
 var totalPrice = 0;
-var global;
 window.onload = function() {
 	initTable();
 	initAddItem();
@@ -19,10 +18,16 @@ function initTable(){
 }
 
 function initAddItem(){
+
 	$('#add-item').click(function(){
 		var barcode = $('#inputBarcode').val();
 		var quantity = $('#inputQuantity').val();
-		if (barcode == '' || quantity == '') return;
+		if (barcode == '' || quantity == ''){
+			$('#prompt-error').show();
+			return;
+		}
+		else
+			$('#prompt-error').hide();
 		$.ajax({
 			url: "/getPrice",
 			type: 'POST',
@@ -47,7 +52,18 @@ function initAddItem(){
 					itemIdx++;
 				}
 				else
-					console.log('no such barcode');
+					alert('No such barcode');
+			}
+		});
+	});
+	$.getJSON( "/getBarcodes", function(data){
+		console.log(data);
+		$('#inputBarcode').autocomplete({
+			source: data,
+			change: function (event, ui) {
+				if (!ui.item) {
+					 $(this).val('');
+				}
 			}
 		});
 	});
@@ -89,96 +105,6 @@ function initAddTransaction(){
 		});
 
 	});
-}
-
-function initAddInventory(){
-	$('#confirm-inventory-product').click(function(){
-		var barcode = $('#product-barcode').text();
-		var outlet_ids = $('#outlet-selector').val();
-		var selling_price = $('#inputSellingPrice').val();
-		var min_stock = $('#inputMinStock').val();
-		
-		console.log(barcode);
-		console.log(outlet_ids);
-		console.log(selling_price);
-		console.log(min_stock);
-		if (validInventoryDetails(selling_price,min_stock))
-			$.ajax({
-				url: "/add/inventory",
-				type: 'POST',
-				data: {
-						"product_barcode":barcode,
-						"outlet_ids": outlet_ids,
-						"selling_price": selling_price,
-						"min_stock": min_stock
-				},
-				success: function (response) {
-					$('#addNewInventory').modal('hide');
-					document.getElementById("new-inventory-form").reset();
-				}
-			});
-	});
-}
-function validProductDetails(name, category, manufacturer, cost_price){
-	var valid = true;
-		
-	if (name.length == 0 || name.length > 150){ //more than 8 digits
-		$('label[for=inputName]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputName]').removeClass('invalid');
-		
-	if (category.length == 0 || category.length > 100){
-		$('label[for=inputCategory]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputCategory]').removeClass('invalid');
-		
-	if (parseInt(manufacturer) > 9999 || manufacturer.length == 0 || !parseInt(manufacturer)){
-		$('label[for=inputManufacturer]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputManufacturer]').removeClass('invalid');
-	
-	if (!parseFloat(cost_price)){
-		$('label[for=inputPrice]').addClass('invalid');
-		valid = false;
-	}
-	else
-		$('label[for=inputPrice]').removeClass('invalid');
-
-	return valid;
-}
-
-function validInventoryDetails(selling_price,min_stock){
-	var valid = true;
-	var alertmsg = '';
-	if (!parseFloat(selling_price)){
-		$('label[for=inputSellingPrice]').addClass('invalid');
-		valid = false;
-		alertmsg = alertmsg + 'Selling price must be a float! ';
-	}
-	else
-		$('label[for=inputSellingPrice]').removeClass('invalid');
-		
-	if (!parseInt(min_stock)){
-		$('label[for=inputMinStock]').addClass('invalid');
-		valid = false;
-		alertmsg = alertmsg + 'Minimum stock must be an integer!';
-	}
-	else
-		$('label[for=inputMinStock]').removeClass('invalid');
-	
-	if (valid)
-		return true;
-	else
-	{
-		alert(alertmsg);
-		return false;
-	}
 }
 
 function init(data){
@@ -271,44 +197,4 @@ function init(data){
 	};
 
 	editableGrid.tableRendered = function() { this.updatePaginator(); };
-}
-
-function addInventory(rowIndex) {
-	var barcode = editableGrid.getRowValues(rowIndex).barcode;
-	var product_name = editableGrid.getRowValues(rowIndex).name;
-	$('#product-name').text(product_name);
-	$('#product-barcode').text(barcode);
-	initOutlet(barcode);
-}
-
-function initOutlet(barcode){
-	var product = new Object();
-	product.barcode = barcode;
-	$.ajax({
-		url: "/get/inventory/notSelling",
-		type: 'POST',
-		data: product,
-		success: function (response) {
-			$('#outlet-selector').empty();
-			$.each(response, function(k,v){
-				$('#outlet-selector').append('<option id="outlet-choice-'+v.id+'" value="'+v.id+'">'+v.s_name+'</option>');	
-			});
-		}
-	});
-}
-
-function submitInventory(){
-	$.ajax({
-		url: "/delete/product",
-		type: 'POST',
-		data: {
-				"barcode": barcode
-		},
-		success: function (response) {
-			
-			console.log('successfully deleted'+ barcode);
-			console.log(response);
-			editableGrid.remove(rowIndex);	
-		}
-	});
 }

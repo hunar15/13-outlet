@@ -2,6 +2,26 @@ var config = require('../config/config');
 
 var connection = config.connection;
 
+
+exports.getBarcodes = function(args, callback) {
+
+	var result =[];
+	
+	var query2 = 'SELECT barcode from product;'; 
+	connection.query(query2, function(err, rows, fields) {
+		if(rows[0]) {
+			for (var tuple in rows) {
+				result.push(''+rows[tuple].barcode+'');
+			}
+			callback(null,result);
+		} else {
+			console.log("Error in processing query : " + err);
+			callback(true,null);
+		}
+	});
+	
+};
+
 exports.getProducts =  function(args, callback) {
 	//query
 	

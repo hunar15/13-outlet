@@ -46,6 +46,7 @@ app.post('/add/stock',routes.addStock);
 app.post('/processTransaction', routes.processTransaction);
 app.post('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);
+app.get('/getBarcodes', routes.getBarcodes);
 app.post('/add/transaction', routes.addTransaction);
 
 http.createServer(app).listen(app.get('port'), function(){

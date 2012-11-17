@@ -5,6 +5,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<title>EditableGrid - Minimal demo - Creating grid in Javascript</title>
 		<script src="js/jquery.js"></script>
+		<script src="http://code.jquery.com/ui/1.8.23/jquery-ui.min.js" type="text/javascript"></script>	
 		<script src="js/bootstrap-dropdown.js"></script>
 		<script src="js/bootstrap-modal.js"></script>
 		<script src="js/transaction.js"></script>
@@ -16,6 +17,7 @@
 		<script src="js/editablegrid_validators.js" ></script>
 		<script src="js/editablegrid_utils.js" ></script>
 		<script src="js/editablegrid_charts.js" ></script>
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.8.23/themes/base/jquery-ui.css" type="text/css" media="all" />			
 		<link rel="stylesheet" href="css/editablegrid.css" type="text/css" media="screen">
 		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="screen">
 		<link rel="stylesheet" href="css/bootstrap-responsive.css" type="text/css" media="screen">
@@ -63,7 +65,7 @@
 					<form id ="new-item-form" class="form-horizontal" onsubmit="return false;">
 						<input type="text" class="span2" id="inputBarcode" placeholder="Barcode" /> &nbsp;
 						<input type="text" class="span2" id="inputQuantity" placeholder="Quantity" /> &nbsp;
-						<button class="btn" id = "add-item">Add</button>
+						<button class="btn" id = "add-item">Add</button><span id="prompt-error" class="invalid" style="display:none;">&nbsp; *Please fill in all fields</span>
 					</form>
 				</div>
 				<div class="modal-footer">
