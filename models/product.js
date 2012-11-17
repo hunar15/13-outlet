@@ -30,7 +30,7 @@ exports.getProducts =  function(args, callback) {
 	
 	var query = 'SELECT p.barcode as barcode, p.name as name, p.category as category, p.manufacturer as manufacturer, i.stock as stock,'+
 				' i.min_stock as min_stock ';
-		query+=', i.selling_price as selling_price, p.cost_price as cost_price, p.status as status,p.display_id as display_id FROM ';
+		query+=', i.selling_price as selling_price, p.cost_price as cost_price, p.status as status FROM ';
 		query+= 'product p INNER JOIN inventory i on i.barcode = p.barcode;';
 	//var searchParameter = args.query;
 	var result = {};
@@ -45,19 +45,24 @@ exports.getProducts =  function(args, callback) {
 	result['metadata'].push({"name": "selling_price", "label" : "Selling Price", "datatype" : "string"});
 	result['metadata'].push({"name": "cost_price", "label" : "Cost Price", "datatype" : "string"});
 	result['metadata'].push({"name": "status", "label": "Status", "datatype" : "string","editable" : "false"});
-	result['metadata'].push({"name": "display_id", "label": "Display ID", "datatype" : "double(, 0, dot, comma, 1, n/a)","editable" : "false"});
 
 	connection.query( query,  function(err, rows, fields) {
 		//var idx = 0;
-		for (var tuple in rows) {
-			var current ={};
-			current['id'] = rows[tuple].barcode;
-			//idx++;
-			current['values'] = rows[tuple];
-			result['data'].push(current);
+		if(err) {
+			console.log(err);
+			callback(true,null);
+		} else {
+			for (var tuple in rows) {
+				var current ={};
+				current['id'] = rows[tuple].barcode;
+				//idx++;
+				current['values'] = rows[tuple];
+				result['data'].push(current);
+			}
+			//console.log(result);
+			callback(err, result);
 		}
-		//console.log(result);
-		callback(err, result);
+		
 	});
 };
 
