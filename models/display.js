@@ -66,9 +66,10 @@ exports.getAllDisplayUnits = function (callback) {
 
 	result['metadata'] = [];
 	result['data']= [];
-	result['metadata'].push({"name": "display_id", "label" : "Display ID", "datatype" : "integer"});
-	result['metadata'].push({"name": "barcode", "label" : "Barcode", "datatype" : "integer"});
-	result['metadata'].push({"name": "description", "label" : "Description", "datatype" : "string"});
+	result['metadata'].push({"name": "display_id", "label" : "Display ID", "datatype" : "string"});
+	result['metadata'].push({"name": "barcode", "label" : "Barcode", "datatype" : "string"});
+	result['metadata'].push({"name": "description", "label" : "Description of Price Display", "datatype" : "string"});
+	result['metadata'].push({"name": "edit", "label" : "Edit/Delete"});
 	connection.query(query, function (err,rows,fields) {
 		// body...
 		if(!err) {
