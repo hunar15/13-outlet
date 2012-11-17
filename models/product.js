@@ -7,11 +7,14 @@ exports.getBarcodes = function(args, callback) {
 
 	var result =[];
 	
-	var query2 = 'SELECT barcode from product;'; 
+	var query2 = 'SELECT barcode, name from product;'; 
 	connection.query(query2, function(err, rows, fields) {
 		if(rows[0]) {
 			for (var tuple in rows) {
-				result.push(''+rows[tuple].barcode+'');
+				var item = new Object();
+				item.label = ''+rows[tuple].barcode+'';
+				item.value = rows[tuple].name;
+				result.push(item);
 			}
 			callback(null,result);
 		} else {

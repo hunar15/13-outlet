@@ -6,7 +6,7 @@ window.onload = function() {
 	initTable();
 	initAddItem();
 	initAddTransaction();
-	initAddInventory();
+	//initAddInventory();
 }
 
 function initTable(){
@@ -57,15 +57,26 @@ function initAddItem(){
 		});
 	});
 	$.getJSON( "/getBarcodes", function(data){
-		console.log(data);
+		
 		$('#inputBarcode').autocomplete({
 			source: data,
-			change: function (event, ui) {
-				if (!ui.item) {
-					 $(this).val('');
-				}
-			}
-		});
+			minLength: 0,
+			// change: function (event, ui) {
+				// if (!ui.item) {
+					 // $(this).val('');
+				// }
+			// },
+			select: function( event, ui ) {
+                $( "#inputBarcode" ).val( ui.item.label ); 
+                return false;
+            }
+		})
+		.data( "autocomplete" )._renderItem = function( ul, item ) {
+            return $( "<li>" )
+                .data( "item.autocomplete", item )
+                .append( "<a><b>" + item.label + "</b> " + item.value + "</a>" )
+                .appendTo( ul );
+        };
 	});
 }
 

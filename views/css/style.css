@@ -12,6 +12,7 @@ table.testgrid th { background: #E5E5E5; text-align: left; }
 .container{width: 850px;}
 .ui-autocomplete {
         max-height: 100px;
+		width: 343px;
         overflow-y: auto;
         /* prevent horizontal scrollbar */
         overflow-x: hidden;
