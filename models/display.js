@@ -5,7 +5,8 @@ var connection = config.connection;
 exports.addDisplayUnit = function (args,callback) {
 	// body...
 	var barcode = args.barcode,
-		description = args.description;
+		description = args.description,
+		display_id = args.display_id;
 
 	var query = "SELECT display_id from display WHERE barcode="+barcode+";";
 
@@ -16,7 +17,7 @@ exports.addDisplayUnit = function (args,callback) {
 			if(rows.length !== 0) {
 				query = "UPDATE display set barcode=NULL where display_id="+rows[0].display_id+";";
 			}
-			query += "INSERT INTO display(barcode,description) VALUES("+barcode+",\'"+description+"\');";
+			query += "INSERT INTO display VALUES("+display_id+","+barcode+",\'"+description+"\');";
 
 			connection.query(query, function (err2,rows2,fields2) {
 				if(!err2) {
