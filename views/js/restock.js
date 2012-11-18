@@ -1,5 +1,5 @@
 var editableGrid;
-var global;
+var checkAll = 0;
 window.onload = function() {
 	initTable();
 	initSetReceived();
@@ -129,7 +129,7 @@ function init(data){
 			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
 		else
 			link.css("cursor", "pointer").click(function(event) {
-				editableGrid.nextPage(); 
+				editableGrid.nextPage(); 			
 				//updatePaginator();
 				});
 		paginator.append(link);
@@ -140,7 +140,7 @@ function init(data){
 			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
 		else
 			link.css("cursor", "pointer").click(function(event) { 
-				editableGrid.lastPage(); 
+				editableGrid.lastPage(); 			
 				//updatePaginator();
 			});
 		paginator.append(link);
@@ -180,7 +180,7 @@ function initDetail(data){
 	}})); 
 	
 	detailedEditableGrid.updatePaginator = function () {
-		var paginator = $("#paginator").empty();
+		var paginator = $(".paginator2").empty();
 		var nbPages = detailedEditableGrid.getPageCount();
 
 
@@ -216,8 +216,7 @@ function initDetail(data){
 			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
 		else
 			link.css("cursor", "pointer").click(function(event) { 
-				detailedEditableGrid.prevPage(); 
-				//updatePaginator()
+				detailedEditableGrid.prevPage();
 			});
 		paginator.append(link);
 		
@@ -230,9 +229,8 @@ function initDetail(data){
 			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
 		else
 			link.css("cursor", "pointer").click(function(event) {
-				detailedEditableGrid.nextPage(); 
-				//updatePaginator();
-				});
+				detailedEditableGrid.nextPage();
+			});
 		paginator.append(link);
 
 		// "last" link
@@ -241,8 +239,7 @@ function initDetail(data){
 			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
 		else
 			link.css("cursor", "pointer").click(function(event) { 
-				detailedEditableGrid.lastPage(); 
-				//updatePaginator();
+				detailedEditableGrid.lastPage();
 			});
 		paginator.append(link);
 

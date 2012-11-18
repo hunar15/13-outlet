@@ -16,7 +16,7 @@ function openingSync(){
 		type: 'GET',
 		success: function (response) {
 			$.unblockUI();
-			alert(response.responseText);
+			//alert(response.responseText);
 		},
 		error: function (response) {
 			$.unblockUI();
@@ -27,11 +27,21 @@ function openingSync(){
 
 function closingSync(){
 	console.log('shop has closed');
+	$.blockUI({ css: {
+		border: 'none',
+		padding: '15px',
+		backgroundColor: '#000',
+		'-webkit-border-radius': '10px',
+		'-moz-border-radius': '10px',
+		opacity: .5,
+		color: '#fff'
+	} });	
 	$.ajax({
 		url: "/syncAtEnd",
 		type: 'GET',
 		success: function (response) {
-			alert(response.responseText);
+			$.unblockUI();
+			//alert(response.responseText);
 		}
 	});
 }

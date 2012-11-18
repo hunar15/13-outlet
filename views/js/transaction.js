@@ -99,7 +99,7 @@ function initAddTransaction(){
 			itemList.push(item_obj);
 		});
 		$.ajax({
-			url: "/add/transaction",
+			url: "/processTransaction",
 			type: 'POST',
 			data: {
 				"cashier":cashier,

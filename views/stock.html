@@ -17,6 +17,7 @@
 		<script src="js/editablegrid_editors.js" ></script>
 		<script src="js/editablegrid_validators.js" ></script>
 		<script src="js/editablegrid_utils.js" ></script>
+		<script src="js/jquery.blockUI.js"></script>
 		<link rel="stylesheet" href="css/editablegrid.css" type="text/css" media="screen">
 		<link rel="stylesheet" href="css/bootstrap.css" type="text/css" media="screen">
 		<link rel="stylesheet" href="css/bootstrap-responsive.css" type="text/css" media="screen">
@@ -71,7 +72,10 @@
 						<h3 id="restockDetailsLabel">Restock details on <span id="restock-date"></span></h3>
 					</div>
 					<div class="modal-body">
+						
 						<div id="restockdetailstablecontent"></div>
+						<div class="paginator2"></div><br />
+						<button id="checkbox-all" class="btn">Receive all</button>
 					</div>
 					<div class="modal-footer">
 						<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
