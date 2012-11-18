@@ -46,7 +46,7 @@ exports.viewRequestDetails = function  (args,callback) {
 		result['data']= [];
 
 		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string"});
-		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "double(,0,comma,dot,1,n/a)"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "double(,0,dot,comma,1,n/a)"});
 		result['metadata'].push({"name":"received","label":"Received"});
 		//what metadata is required?
 		connection.query(query, function (err,rows,fields) {
