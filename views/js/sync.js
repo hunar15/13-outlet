@@ -16,6 +16,7 @@ function openingSync(){
 		type: 'GET',
 		success: function (response) {
 			$.unblockUI();
+			initTable();
 			//alert(response.responseText);
 		},
 		error: function (response) {
@@ -41,6 +42,7 @@ function closingSync(){
 		type: 'GET',
 		success: function (response) {
 			$.unblockUI();
+			initTable();
 			//alert(response.responseText);
 		}
 	});
