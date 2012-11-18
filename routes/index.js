@@ -312,7 +312,14 @@ exports.processTransaction = function (req, res) {
 				transaction.addTransaction(result, function (err3, res3) {
 					if(!err3) {
 						console.log("TRANSACTION successfully completed");
-						res.send({ "STATUS" : "SUCCESS"});
+						console.log("Computing RESTOCK check ...");
+						sync.restockCheck(function(err,result) {
+							if(!err) {
+								res.send({"STATUS" : "SUCCESS"});
+							} else {
+								res.send({"STATUS" : "ERROR"});
+							}
+						});
 					} else {
 						console.log(err3);
 						res.send({ "STATUS" : "ERROR"});
