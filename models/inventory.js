@@ -123,7 +123,7 @@ exports.getPrice = function(args, callback) {
 function recomputeDiscontinuedSellingPrice (callback) {
 	// body...
 	var query = 'UPDATE inventory i inner join product p on i.barcode=p.barcode ' +
-			' set selling_price= 0.5 * selling_price where p.status=\'DISCONTINUED\';';
+			' set i.selling_price= 0.5 * p.cost_price where p.status=\'DISCONTINUED\';';
 
 	connection.query(query, function(err,rows,fields) {
 		if(!err) {
