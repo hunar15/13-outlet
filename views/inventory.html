@@ -47,8 +47,10 @@
 						<li class="dropdown" id="sync-link">
 							<a id="sync-tab" class="dropdown-toggle" data-toggle="dropdown" href="#">HQ SYNC<b class="caret"></b></a>
 							<ul class="dropdown-menu" style="min-width:100px;">
-								<li><a onclick="openingSync();" style="cursor: pointer;" title="Sync inventory, restock & revenue">Shop opening </a></li>
-								<li><a onclick="closingSync();" style="cursor: pointer;" title="Recomputes pricing">Shop closing</a></li>
+								<li><a onclick="inventorySync();" style="cursor: pointer;" title="Sync inventory, restock & revenue">Inventory</a></li>
+								<li><a onclick="requestSync();" style="cursor: pointer;" title="Recomputes pricing">Update HQ request</a></li>
+								<li><a onclick="priceSync();" style="cursor: pointer;" title="Sync inventory, restock & revenue">Recompute Selling Price</a></li>
+								<li><a onclick="revenueSync();" style="cursor: pointer;" title="Recomputes pricing">Revenue</a></li>
 							</ul>
 						</li>
 					</ul>			

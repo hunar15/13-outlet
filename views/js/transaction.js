@@ -137,6 +137,12 @@ function init(data){
 	editableGrid.load({"metadata": data.metadata,"data": data.data});
 	editableGrid.renderGrid("transactioncontent", "testgrid");
 
+	editableGrid.setCellRenderer("details", new CellRenderer({render: function(cell, value) {
+		var rowId = editableGrid.getRowId(cell.rowIndex);
+		
+		cell.innerHTML = "<a href=\"#transactionDetails\" data-toggle=\"modal\" onclick=\"generateDetails("+cell.rowIndex+"); \" style=\"cursor:pointer\">" +
+						 "<img src=\"images/view.png\" border=\"0\" alt=\"delete\" title=\"View details\"/></a>";
+	}})); 
 
 	editableGrid.updatePaginator = function () {
 		var paginator = $("#paginator").empty();
@@ -228,16 +234,7 @@ function initDetail(data){
 	
 	detailedEditableGrid.load({"metadata": data.metadata,"data": data.data});
 	detailedEditableGrid.renderGrid("transactiondetailstablecontent", "detailgrid");
-	
-	detailedEditableGrid.setCellRenderer("received", new CellRenderer({render: function(cell, value) {
-		// this action will remove the row, so first find the ID of the row containing this cell 
-		var rowId = detailedEditableGrid.getRowId(cell.rowIndex);
-		var quantity = detailedEditableGrid.getRowValues(cell.rowIndex).quantity;
-		if (value==0)
-			cell.innerHTML = "<input class='received-check' id='check-"+rowId+"' data-quantity='"+quantity+"' type='checkbox'/>";
-		else
-			cell.innerHTML = "<input type='checkbox' checked='true' disabled='true'/>";
-	}})); 
+
 	
 	detailedEditableGrid.updatePaginator = function () {
 		var paginator = $(".paginator2").empty();
@@ -312,8 +309,9 @@ function initDetail(data){
 
 function generateDetails(rowIndex) {
 	var id = editableGrid.getRowValues(rowIndex).id;
+	var date = editableGrid.getRowValues(rowIndex).date;
 	$.ajax({
-		url: "/get/transactions/details",
+		url: "/get/transaction/details",
 		type: 'POST',
 		data: {
 			"id": id
@@ -322,6 +320,7 @@ function generateDetails(rowIndex) {
 			initDetail(response);
 			detailedEditableGrid.setPageIndex(0);
 			detailedEditableGrid.filter('');
+			$('#transaction-date').text(date);
 			$('#transactionDetails').modal('show');
 		}
 	});	

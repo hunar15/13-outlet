@@ -147,6 +147,7 @@ exports.viewTransactions = function (req,res) {
 };
 
 exports.viewTransactionDetails = function (req,res) {
+	console.log('hello');
 	transaction.viewTransactionDetails(req.body, function (err, result) {
 		if(!err) {
 			res.send(result);

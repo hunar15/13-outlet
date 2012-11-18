@@ -81,12 +81,10 @@ exports.viewTransactions = function (callback) {
 	result['metadata'] = [];
 	result['data']= [];
 
-	result['metadata'].push({"name":"id","label":"Transaction ID", "datatype" : "string","editable":"false"});
-	result['metadata'].push({"name":"cashier_id","label":"Cashier ID", "datatype" : "string", "editable" : "false"});
-	result['metadata'].push({"name":"date","label":"Transaction Date", "datatype" : "date","editable":"false"});
-	result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string", "editable" : "false"});
-	result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string","editable":"false"});
-	result['metadata'].push({"name":"price","label":"Price", "datatype" : "string", "editable" : "false"});
+	result['metadata'].push({"name":"id","label":"Transaction ID", "datatype" : "string"});
+	result['metadata'].push({"name":"cashier_id","label":"Cashier ID", "datatype" : "string"});
+	result['metadata'].push({"name":"date","label":"Transaction Date", "datatype" : "date"});
+	result['metadata'].push({"name":"details","label":"Details"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
 		if(!err) {
@@ -107,15 +105,16 @@ exports.viewTransactions = function (callback) {
 exports.viewTransactionDetails = function (args,callback) {
 	// body...
 	var id = args.id;
+	console.log(id);
 	if(id!==null) {
 		var query = 'select barcode,quantity,price from transaction_details where id='+id+' ;';
 		var result = {};
 		result['metadata'] = [];
 		result['data']= [];
 
-		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string", "editable" : "false"});
-		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string","editable":"false"});
-		result['metadata'].push({"name":"price","label":"Price", "datatype" : "string", "editable" : "false"});
+		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string"});
+		result['metadata'].push({"name":"price","label":"Price", "datatype" : "string"});
 		connection.query(query, function  (err, rows, fields) {
 			// body...
 			if(!err) {
