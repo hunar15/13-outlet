@@ -43,6 +43,7 @@ app.get('/get/transactions',routes.viewTransactions);
 app.get('/recompute/sellingPrice',routes.recomputeSellingPrice);
 app.get('/sync/inventory',routes.syncInventory);
 app.get('/sync/revenue',routes.syncRevenue);
+app.get('/sync/requests',routes.syncRequests);
 app.get('/recompute/stock',routes.restockCheck);
 
 app.post('/get/transaction/details',routes.viewTransactionDetails);
