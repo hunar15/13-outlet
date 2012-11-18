@@ -27,22 +27,22 @@ function syncInventory(callback) {
 				if(!error2) {
 					if(body2["STATUS"] === "SUCCESS") {
 						console.log("COMPLETE Sync successful");
-						callback(null,true);
+					//	callback(null,true);
 					} else {
 						console.log(' ERROR occured : ' + error2);
-						callback(true,null);
+					//	callback(true,null);
 					}
-					//restockCheck(callback);
+					restockCheck(callback);
 				} else {
 					console.log(' ERROR occured : ' + error2);
-					//restockCheck(callback);
-					callback(true,null);
+					restockCheck(callback);
+					//callback(true,null);
 				}
 			});
 		} else {
 			console.log(' ERROR occured : ' + err2);
-			//restockCheck(callback);
-			callback(true,null);
+			restockCheck(callback);
+			//callback(true,null);
 		}
 	});
 }
@@ -136,10 +136,10 @@ function syncDeleted(callback) {
 
 function restockCheck (callback) {
 	var restockCheckQuery = '';
-	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 2) as quantity FROM inventory where stock <= min_stock " +
+	restockCheckQuery = "SELECT i.barcode as barcode, CEIL(i.min_stock * 2) as quantity FROM inventory i where i.stock <= i.min_stock " +
 						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
-						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\')) " +
-						" AND NOT EXISTS (select * from product p where p.barcode=barcode AND p.status =\'DISCONTINUED\');";
+						" ON b.date=d.date WHERE d.barcode=i.barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\')) " +
+						" AND NOT EXISTS (select * from product p where p.barcode=i.barcode AND p.status =\'DISCONTINUED\');";
 	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
 		if(!err2) {
 			var result = {};
@@ -148,7 +148,8 @@ function restockCheck (callback) {
 				if(!err3) {
 					//create restock requests
 					console.log("RESTOCK REQUEST operation successfully completed");
-					syncRequests(callback);
+					//syncRequests(callback);
+					callback(null,true);
 				} else {
 					console.log("Error while adding RESTOCK REQUESTS");
 					console.log("Error : " + err3);

@@ -89,6 +89,7 @@ exports.addRequest =  function(args, callback) {
 			if(!err) {
 				var errorFlag = 0,
 					query_2 = '';
+				console.log("Request List length : "+ requestList.length);
 				for(var i in requestList) {
 					var current = requestList[i];
 					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ ", 0"+
