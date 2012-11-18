@@ -213,13 +213,13 @@ exports.setAsReceived = function(args, callback) {
 				//callback(null,true);
 
 				//check if all products in the batch have been received and update
-				var query2 ="UPDATE batch_request SET status=\'INCOMPLETE\' WHERE AND date=\'"+date+"\' ;";
+				var query2 ="UPDATE batch_request SET status=\'INCOMPLETE\' WHERE date=\'"+date+"\' ;";
 					query2 += "UPDATE inventory SET stock=stock+"+quantity+" WHERE barcode="+barcode+";";
 
 				connection.query(query2, function(err2,rows2,fields2) {
 					if(!err2) {
-						var query3 = "UPDATE batch_request SET status=\'RECEIVED\' WHERE AND date=\'"+date+"\'"+
-							" AND NOT EXISTS( SELECT * from request_details WHERE AND date=\'"+date+"\' AND received=\'false\')";
+						var query3 = "UPDATE batch_request SET status=\'RECEIVED\' WHERE date=\'"+date+"\'"+
+							" AND NOT EXISTS( SELECT * from request_details WHERE date=\'"+date+"\' AND received=\'false\')";
 
 						connection.query(query3, function(err3, rows3, fields3) {
 							if(!err3) {

@@ -255,7 +255,8 @@ exports.syncInventoryAndRestock = function(callback) {
 					inventory_query = '';
 				for (i=0; i< addedList.length;i++) {
 					var current = addedList[i];
-					product_query += "INSERT INTO product select "+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'ADDED\'" +
+					product_query += "INSERT INTO product select "+current['barcode']+","+connection.escape(current['name'])+","+current['cost_price']+
+								","+connection.escape(current['category'])+","+connection.escape(current['manufacturer'])+",\'ADDED\'" +
 									" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
 					/*if(i==(addedList.length - 1 ))
 						flag = 1;
@@ -280,7 +281,7 @@ exports.syncInventoryAndRestock = function(callback) {
 							});
 						} else {
 							console.log("Error while adding to the PRODUCT table");
-							//console.log("Error : " +err);
+							console.log("Error : " +err);
 						}
 					});
 				} else {
