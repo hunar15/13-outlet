@@ -368,8 +368,8 @@ CREATE TABLE IF NOT EXISTS `transaction_details` (
 
 CREATE VIEW sold_yesterday as
 select d.barcode AS barcode,t.date AS date,d.price AS price,sum(d.quantity) AS total
- from (transaction_details d join transaction t on t.id = d.id) where (t.date = SUBDATE(curdate(),1)) 
- group by t.date,d.barcode,d.price;
+ from (transaction_details d join transaction t on t.id = d.id)
+ group by t.date,d.barcode,d.price order by t.date DESC limit 1;
 --
 -- Dumping data for table `transaction_details`
 --
