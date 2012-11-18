@@ -113,7 +113,7 @@ exports.viewTransactionDetails = function (args,callback) {
 		result['data']= [];
 
 		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string"});
-		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "double(,0,comma,dot,1,n/a)"});
 		result['metadata'].push({"name":"price","label":"Price", "datatype" : "string"});
 		connection.query(query, function  (err, rows, fields) {
 			// body...

@@ -13,8 +13,8 @@ exports.viewRequests = function  (callback) {
 	result['metadata'] = [];
 	result['data']= [];
 
-	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date","editable":"false"});
-	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string", "editable" : "false"});
+	result['metadata'].push({"name":"date","label":"Date of Request", "datatype" : "date"});
+	result['metadata'].push({"name":"status","label":"Status", "datatype" : "string"});
 	result['metadata'].push({"name":"details","label":"View details"});
 	connection.query(query, function  (err, rows, fields) {
 		// body...
@@ -45,8 +45,8 @@ exports.viewRequestDetails = function  (args,callback) {
 		result['metadata'] = [];
 		result['data']= [];
 
-		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string","editable":"false"});
-		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string", "editable" : "false"});
+		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "double(,0,comma,dot,1,n/a)"});
 		result['metadata'].push({"name":"received","label":"Received"});
 		//what metadata is required?
 		connection.query(query, function (err,rows,fields) {
