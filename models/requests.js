@@ -91,7 +91,7 @@ exports.addRequest =  function(args, callback) {
 					query_2 = '';
 				for(var i in requestList) {
 					var current = requestList[i];
-					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ ", \'false\'"+
+					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ ", 0"+
 							" FROM DUAL WHERE NOT EXISTS(SELECT * FROM request_details WHERE date= CURDATE() AND barcode="+current['barcode']+");";
 				}
 				if(query_2 !== '') {
@@ -205,7 +205,7 @@ exports.receivedAll = function (args, callback) {
 
 	if(date !== null) {
 		var query = "UPDATE inventory i inner join request_details r on r.barcode=i.barcode set i.stock=i.stock +" +
-						" r.quantity where r.date=\'"+date+"\' AND r.received=\'false\';";
+						" r.quantity where r.date=\'"+date+"\' AND r.received=0;";
 			query +="UPDATE batch_request SET status=\'RECEIVED\' WHERE date=\'"+date+"\' ;";
 		
 

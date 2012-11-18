@@ -14,6 +14,22 @@ function initTable(){
 }
 
 function initSetReceived(){
+	$('#receive-all').click(function(){
+	var date = $('#restock-date').text();
+	console.log('sent');
+		$.ajax({
+			url: "/stock/receivedAll",
+			type: 'POST',
+			data: {
+				"date": date
+			},
+			success: function (response) {
+				initTable();
+				$('#restockDetails').modal('hide');
+			
+			}
+		});
+	});
 	$('#confirm-checked-product').click(function(){
 		var batch_received=[];
 		$('.received-check').each(function(k,v){
