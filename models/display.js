@@ -17,7 +17,7 @@ exports.addDisplayUnit = function (args,callback) {
 			if(rows.length !== 0) {
 				query = "UPDATE display set barcode=NULL where display_id="+rows[0].display_id+";";
 			}
-			query += "INSERT INTO display VALUES("+display_id+","+barcode+",\'"+description+"\');";
+			query += "INSERT INTO display VALUES("+display_id+","+barcode+","+connection.escape(description)+");";
 
 			connection.query(query, function (err2,rows2,fields2) {
 				if(!err2) {
@@ -106,7 +106,7 @@ exports.updateDisplayUnit = function  (args,callback) {
 				if(rows.length !== 0) {
 					query = "UPDATE display set barcode=NULL where display_id="+rows[0].display_id+";";
 				}
-				query += "UPDATE display set barcode="+barcode+",description=\'"+description+"\' where display_id="+display_id+";";
+				query += "UPDATE display set barcode="+barcode+",description="+connection.escape(description)+" where display_id="+display_id+";";
 
 				connection.query(query, function (err2,rows2,fields2) {
 					if(!err2) {

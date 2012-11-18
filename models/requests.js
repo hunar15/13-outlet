@@ -145,59 +145,6 @@ exports.deleteRequest = function (args, callback) {
 	}
 	
 };
-/*
-exports.setAsReceived = function(args, callback) {
-	/*
-	{
-		request_id : ""
-	}
-	
-	
-	var query = "select d.barcode as barcode, d.quantity as quantity from batch_request r  " +
-				" inner join request_details d on r.date =d.date AND r.status=\'DISPATCHED\';";
-
-	connection.query(query, function (err, rows, fields) {
-		// body...
-		if(!err) {
-			var query2 = '';
-			if(rows.length !== 0) {
-				for(var i in rows) {
-					var current = rows[i];
-					query2 += 'UPDATE inventory SET stock=stock+'+current['quantity']+' WHERE barcode='+current['barcode']+';';
-				}
-
-				connection.query(query2, function(err2,rows2,fields2) {
-					if(!err2) {
-						console.log("STOCK added to INVENTORY");
-						//callback(null,true);
-						var query3 = 'UPDATE batch_request SET status=\'RECEIVED\' WHERE status=\'DISPATCHED\';';
-
-						connection.query(query3, function(err3,rows3,fields3) {
-							if(!err3) {
-								console.log("RESTOCK Request status changed to RECEIVED");
-								callback(null,true);
-							} else {
-								console.log("ERROR : " + err3);
-								callback(true,null);
-							}
-						});
-					} else {
-						console.log("ERROR : " + err2);
-						callback(true,null);
-					}
-				});
-			} else {
-				console.log("No STOCK has been received");
-				callback(null,true);
-			}
-			console.log("Request Status successfully updated");
-		} else {
-			console.log("Unable to able request status");
-			callback(true,null);
-		}
-	});
-};
-*/
 
 exports.receivedAll = function (args, callback) {
 	// body...

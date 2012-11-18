@@ -75,9 +75,8 @@ exports.addTransaction = function (args, callback) {
 
 exports.viewTransactions = function (callback) {
 	// body...
-	var query = 'select t.id as id, t.cashier_id as cashier_id, DATE_FORMAT(t.date,\'%Y-%m-%d\') as date, '+
-			' d.barcode as barcode, d.quantity as quantity, d.price as price'+
-			' FROM transaction t inner join transaction_details d ON t.id=d.id ;';
+	var query = 'select t.id as id, t.cashier_id as cashier_id, DATE_FORMAT(t.date,\'%Y-%m-%d\') as date '+
+			' FROM transaction t;';
 	var result = {};
 	result['metadata'] = [];
 	result['data']= [];
@@ -103,4 +102,37 @@ exports.viewTransactions = function (callback) {
 			callback(true,null);
 		}
 	});
+};
+
+exports.viewTransactionDetails = function (args,callback) {
+	// body...
+	var id = args.id;
+	if(id!==null) {
+		var query = 'select barcode,quantity,price from transaction_details where id='+id+' ;';
+		var result = {};
+		result['metadata'] = [];
+		result['data']= [];
+
+		result['metadata'].push({"name":"barcode","label":"Barcode", "datatype" : "string", "editable" : "false"});
+		result['metadata'].push({"name":"quantity","label":"Quantity", "datatype" : "string","editable":"false"});
+		result['metadata'].push({"name":"price","label":"Price", "datatype" : "string", "editable" : "false"});
+		connection.query(query, function  (err, rows, fields) {
+			// body...
+			if(!err) {
+				for( var i in rows) {
+					var current ={};
+					current['id'] = rows[i]['barcode'];
+					current['values'] = rows[i];
+					result['data'].push(current);
+				}
+				callback(null,result);
+			} else {
+				console.log(err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
 };

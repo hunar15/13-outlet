@@ -120,12 +120,28 @@ exports.getPrice = function(args, callback) {
 	}
 };
 
+function recomputeDiscontinuedSellingPrice (callback) {
+	// body...
+	var query = 'UPDATE inventory i inner join product p on i.barcode=p.barcode ' +
+			' set selling_price= 0.5 * selling_price where p.status=\'DISCONTINUED\';';
+
+	connection.query(query, function(err,rows,fields) {
+		if(!err) {
+			console.log("Selling price of DISCONTINUED products halved");
+			callback(null,true);
+		} else {
+			console.log("Error encountered");
+			console.log("ERROR : "+err);
+			callback(true,null);
+		}
+	});
+}
 exports.recomputeSellingPrice = function(callback) {
 	
 	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST( p.cost_price, ( ' +
 					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 1.5 * i.min_stock ) ' +
 					'),2) AS new_price FROM product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
-					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode WHERE p.status <> \'ADDED\';';
+					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode WHERE p.status <> \'ADDED\' AND p.status<>\'DISCONTINUED\';';
 
 	connection.query(select_query,function (err, rows, fields) {
 		if(!err) {
@@ -136,18 +152,20 @@ exports.recomputeSellingPrice = function(callback) {
 			}
 			connection.query(update_query, function(err2,rows2,fields2) {
 				if(!err2) {
-					console.log("Selling prices of PRODUCTS successfully updated");
-					callback(null,true);
+					console.log("Selling prices of NORMAL PRODUCTS successfully updated");
+				//	callback(null,true);
 				} else {
 					console.log("Error while updating prices");
 					console.log("ERROR : " + err2);
-					callback(true,null);
+				//	callback(true,null);
 				}
+				recomputeDiscontinuedSellingPrice(callback);
 			});
 		} else {
 			console.log("Error encountered");
 			console.log("ERROR : "+err);
-			callback(true,null);
+		//	callback(true,null);
+			recomputeDiscontinuedSellingPrice(callback);
 		}
 	});
 

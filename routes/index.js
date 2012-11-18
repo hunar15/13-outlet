@@ -15,6 +15,47 @@ var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
 
+exports.restockCheck = function (req,res) {
+	sync.restockCheck(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncRequests = function (req,res) {
+	sync.syncRequests(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncInventory = function (req,res) {
+	// body..
+	sync.syncInventoryAndRestock(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncRevenue = function (req,res) {
+	// body..
+	sync.syncRevenue(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 
 exports.addDisplayUnit = function (req,res) {
 	display.addDisplayUnit(req.body,function(err,result) {
@@ -105,6 +146,15 @@ exports.viewTransactions = function (req,res) {
 	});
 };
 
+exports.viewTransactionDetails = function (req,res) {
+	transaction.viewTransactionDetails(req.body, function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 exports.getInventory = function (req,res) {
 	inventory.getInventory(function(err,result) {
 		if(!err) {

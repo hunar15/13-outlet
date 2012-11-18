@@ -40,6 +40,12 @@ app.get('/get/display',routes.getAllDisplayUnits);
 app.get('/get/inventory',routes.getInventory);
 app.get('/get/requests',routes.viewRequests);
 app.get('/get/transactions',routes.viewTransactions);
+app.get('/recompute/sellingPrice',routes.recomputeSellingPrice);
+app.get('/sync/inventory',routes.syncInventory);
+app.get('/sync/revenue',routes.syncRevenue);
+app.get('/recompute/stock',routes.restockCheck);
+
+app.post('/get/transaction/details',routes.viewTransactionDetails);
 
 app.post('/add/display',routes.addDisplayUnit);
 app.post('/stock/receivedAll',routes.receivedAll);

@@ -27,18 +27,22 @@ function syncInventory(callback) {
 				if(!error2) {
 					if(body2["STATUS"] === "SUCCESS") {
 						console.log("COMPLETE Sync successful");
+						callback(null,true);
 					} else {
 						console.log(' ERROR occured : ' + error2);
+						callback(true,null);
 					}
-					restockCheck(callback);
+					//restockCheck(callback);
 				} else {
 					console.log(' ERROR occured : ' + error2);
-					restockCheck(callback);
+					//restockCheck(callback);
+					callback(true,null);
 				}
 			});
 		} else {
 			console.log(' ERROR occured : ' + err2);
-			restockCheck(callback);
+			//restockCheck(callback);
+			callback(true,null);
 		}
 	});
 }
@@ -72,7 +76,7 @@ function syncUpdated(callback) {
 				*/
 				for(var i in ms_list) {
 					var current = ms_list[i];
-					query += 'UPDATE inventory SET min_stock='+current['min_stock']+' WHERE barcode=' + current['barcode']+' ;';
+					query += 'UPDATE inventory SET min_stock='+current['min_stock']+',selling_price='+current['selling_price']+' WHERE barcode=' + current['barcode']+' ;';
 				}
 				connection.query(query, function (err,rows,fields) {
 					if(!err) {
@@ -433,3 +437,5 @@ function syncRequests (callback) {
 
 	});
 }
+exports.restockCheck = restockCheck;
+exports.syncRequests = syncRequests;
