@@ -283,9 +283,9 @@ function generateDetails(rowIndex) {
 			$('#restock-date').text(date);
 			$('#restockDetails').modal('show');
 			if (status != "DISPATCHED")
-				$('#received-check').attr("disabled",true);
+				$('.received-check').attr("disabled","disabled");
 			else
-				$('#received-check').attr("disabled",false);			
+				$('.received-check').attr("disabled","disabled");			
 		}
 	});	
 }
