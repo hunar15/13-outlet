@@ -33,7 +33,7 @@
 	<body>
 		<div class="container">	
 			<div class="hero-unit">
-				<h1>Hypermarket 13</h1>
+				<h1>Shop Hypermarket 13</h1>
 			</div>
 			<div class="navbar navbar-inverse">
 				<div class="navbar-inner">
@@ -75,11 +75,26 @@
 					<button id ="confirm-checkout" class="btn btn-primary">Checkout</button>
 				</div>
 			</div>
-			
+			<div id="transactionDetails" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="transactionDetailsLabel" aria-hidden="true">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					<h3 id="transactionDetailsLabel">Transaction details on <span id="transaction-date"></span></h3>
+				</div>
+				<div class="modal-body">
+					<label for="filter2"><br/>Filter :</label>
+					<input class="span4" type="text" id="filter2" placeholder="Enter any transaction details"/>
+					<div id="transactiondetailstablecontent"></div>
+					<div class="paginator2"></div><br />
+				</div>
+				<div class="modal-footer">
+					<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+				</div>
+			</div>
 			<label for="filter"><br/>Filter :</label>
 			<input class="span4" type="text" id="filter" placeholder="Enter any transaction details"/>
-			<div id="transactioncontent">
-			</div>
+			<div id="transactioncontent"></div>
+			<div id="paginator"></div>
+			
 			<hr />
 			<footer>
 			<p>CG3002 Hypermarket Project AY12/13 Semester 1</p>

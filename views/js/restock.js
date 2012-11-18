@@ -269,10 +269,7 @@ function initDetail(data){
 function generateDetails(rowIndex) {
 	var date = editableGrid.getRowValues(rowIndex).date;
 	var status = editableGrid.getRowValues(rowIndex).status;
-	// if (status != "FORWARDED" && status != "DISPATCHED")
-		// $('#confirm-checked-product').attr("disabled",true);
-	// else
-		// $('#confirm-checked-product').attr("disabled",false);
+
 	$.ajax({
 		url: "/get/requests/details",
 		type: 'POST',
@@ -285,6 +282,10 @@ function generateDetails(rowIndex) {
 			detailedEditableGrid.filter('');
 			$('#restock-date').text(date);
 			$('#restockDetails').modal('show');
+			if (status != "DISPATCHED")
+				$('#received-check').attr("disabled",true);
+			else
+				$('#received-check').attr("disabled",false);			
 		}
 	});	
 }

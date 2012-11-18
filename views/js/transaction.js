@@ -209,3 +209,120 @@ function init(data){
 
 	editableGrid.tableRendered = function() { this.updatePaginator(); };
 }
+
+function initDetail(data){
+	detailedEditableGrid = new EditableGrid("TransactionDetail", {
+		enableSort: true, // true is the default, set it to false if you don't want sorting to be enabled
+		editmode: "absolute", // change this to "fixed" to test out editorzone, and to "static" to get the old-school mode
+		editorzoneid: "edition", // will be used only if editmode is set to "fixed"
+		pageSize: 10,
+		maxBars: 10
+	});
+
+	$('#filter2').bind('keypress',function(e){
+		var code = (e.keyCode ? e.keyCode : e.which);
+		if(code == 13) {
+			detailedEditableGrid.filter($('#filter2').val());
+		}		
+	});
+	
+	detailedEditableGrid.load({"metadata": data.metadata,"data": data.data});
+	detailedEditableGrid.renderGrid("transactiondetailstablecontent", "detailgrid");
+	
+	detailedEditableGrid.setCellRenderer("received", new CellRenderer({render: function(cell, value) {
+		// this action will remove the row, so first find the ID of the row containing this cell 
+		var rowId = detailedEditableGrid.getRowId(cell.rowIndex);
+		var quantity = detailedEditableGrid.getRowValues(cell.rowIndex).quantity;
+		if (value==0)
+			cell.innerHTML = "<input class='received-check' id='check-"+rowId+"' data-quantity='"+quantity+"' type='checkbox'/>";
+		else
+			cell.innerHTML = "<input type='checkbox' checked='true' disabled='true'/>";
+	}})); 
+	
+	detailedEditableGrid.updatePaginator = function () {
+		var paginator = $(".paginator2").empty();
+		var nbPages = detailedEditableGrid.getPageCount();
+
+
+		// get interval
+		var interval = detailedEditableGrid.getSlidingPageInterval(10);
+		if (interval == null) return;
+
+		// get pages in interval (with links except for the current page)
+		var pages = detailedEditableGrid.getPagesInInterval(interval, function(pageIndex, isCurrent) {
+			if (isCurrent) return "" + (pageIndex + 1);
+			return $("<a>").css("cursor", "pointer")
+				.html(pageIndex + 1)
+				.click(function(event) {
+					console.log(parseInt($(this).html()) - 1);
+					//editableGrid.setPageIndex(parseInt($(editableGrid).html()) - 1); 
+				});
+		});
+
+		// "first" link
+		var link = $("<a>").html("<img src='images/gofirst.png'/>&nbsp;");
+		if (!detailedEditableGrid.canGoBack())
+			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
+		else 
+			link.css("cursor", "pointer").click(function(event) {
+				detailedEditableGrid.firstPage(); 
+				//updatePaginator();
+				});
+		paginator.append(link);
+
+		// "prev" link
+		link = $("<a>").html("<img src='images/prev.png'/>&nbsp;");
+		if (!detailedEditableGrid.canGoBack())
+			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
+		else
+			link.css("cursor", "pointer").click(function(event) { 
+				detailedEditableGrid.prevPage();
+			});
+		paginator.append(link);
+		
+		// pages
+		for (p = 0; p < pages.length; p++) paginator.append(pages[p]).append(" | ");
+
+		// "next" link
+		link = $("<a>").html("<img src='images/next.png'/>&nbsp;");
+		if (!detailedEditableGrid.canGoForward())
+			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
+		else
+			link.css("cursor", "pointer").click(function(event) {
+				detailedEditableGrid.nextPage();
+			});
+		paginator.append(link);
+
+		// "last" link
+		link = $("<a>").html("<img src='images/golast.png'/>&nbsp;");
+		if (!detailedEditableGrid.canGoForward())
+			link.css({ opacity : 0.4, filter: "alpha(opacity=40)" });
+		else
+			link.css("cursor", "pointer").click(function(event) { 
+				detailedEditableGrid.lastPage();
+			});
+		paginator.append(link);
+
+	};
+
+	detailedEditableGrid.tableRendered = function() { this.updatePaginator(); };
+}
+
+
+
+function generateDetails(rowIndex) {
+	var id = editableGrid.getRowValues(rowIndex).id;
+	$.ajax({
+		url: "/get/transactions/details",
+		type: 'POST',
+		data: {
+			"id": id
+		},
+		success: function (response) {
+			initDetail(response);
+			detailedEditableGrid.setPageIndex(0);
+			detailedEditableGrid.filter('');
+			$('#transactionDetails').modal('show');
+		}
+	});	
+}
