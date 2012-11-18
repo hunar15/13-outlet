@@ -42,7 +42,7 @@ app.get('/get/requests',routes.viewRequests);
 app.get('/get/transactions',routes.viewTransactions);
 
 app.post('/add/display',routes.addDisplayUnit);
-
+app.post('/stock/receivedAll',routes.receivedAll);
 app.post('/deleteDisplayUnit',routes.deleteDisplayUnit);
 app.post('/updateDisplayUnit', routes.updateDisplayUnit);
 app.post('/get/requests/details',routes.viewRequestDetails);

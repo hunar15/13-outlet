@@ -198,6 +198,44 @@ exports.setAsReceived = function(args, callback) {
 	});
 };
 */
+
+exports.receivedAll = function (args, callback) {
+	// body...
+	var date = args.date;
+
+	if(date !== null) {
+		var query = "UPDATE inventory i inner join request_details r on r.barcode=i.barcode set i.stock=i.stock +" +
+						" r.quantity where r.date=\'"+date+"\' AND r.received=\'false\';";
+			query +="UPDATE batch_request SET status=\'RECEIVED\' WHERE date=\'"+date+"\' ;";
+		
+
+		connection.query(query, function(err,rows, fields) {
+			if(!err) {
+				console.log(query);
+				//callback(null,true);
+
+				//check if all products in the batch have been received and update
+				
+				var query2 = "UPDATE request_details SET received=1 WHERE date=\'"+date+"\';";
+				connection.query(query2, function(err2,rows2,fields2) {
+					if(!err2) {
+						console.log("Batch Request COMPLETED");
+						callback(null,true);
+					} else {
+						console.log("Error encountered : "+ err2);
+						callback(true,null);
+					}
+				});
+			} else {
+				console.log("Error encountered : " + err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
+};
 exports.setAsReceived = function(args, callback) {
 	var date = args.date,
 		barcode = args.barcode,

@@ -25,6 +25,16 @@ exports.addDisplayUnit = function (req,res) {
 		}
 	});
 };
+exports.receivedAll = function  (req,res) {
+	// body...
+	restock.receivedAll(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 
 exports.getAllDisplayUnits = function (req,res) {
 	display.getAllDisplayUnits(function(err,result) {
