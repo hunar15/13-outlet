@@ -109,8 +109,7 @@ function init(data){
 			return $("<a>").css("cursor", "pointer")
 				.html(pageIndex + 1)
 				.click(function(event) {
-					console.log(parseInt($(this).html()) - 1);
-					//editableGrid.setPageIndex(parseInt($(editableGrid).html()) - 1); 
+					editableGrid.setPageIndex(parseInt($(this).html()) - 1); 
 				});
 		});
 
@@ -210,8 +209,7 @@ function initDetail(data){
 			return $("<a>").css("cursor", "pointer")
 				.html(pageIndex + 1)
 				.click(function(event) {
-					console.log(parseInt($(this).html()) - 1);
-					//editableGrid.setPageIndex(parseInt($(editableGrid).html()) - 1); 
+					editableGrid.setPageIndex(parseInt($(this).html()) - 1); 
 				});
 		});
 
@@ -285,7 +283,11 @@ function generateDetails(rowIndex) {
 			if (status != "DISPATCHED")
 				$('.received-check').attr("disabled","disabled");
 			else
-				$('.received-check').attr("disabled","disabled");			
+				$('.received-check').removeAttr("disabled","disabled");	
+			if (status == "RECEIVED" || status == "ADDED")
+				$('#receive-all').attr("disabled",'disabled');
+			else
+				$('#receive-all').removeAttr("disabled",'disabled');
 		}
 	});	
 }
