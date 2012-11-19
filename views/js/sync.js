@@ -27,25 +27,26 @@ function inventorySync(){
 }
 
 function requestSync(){
-	console.log('shop has closed');
-	$.blockUI({ css: {
-		border: 'none',
-		padding: '15px',
-		backgroundColor: '#000',
-		'-webkit-border-radius': '10px',
-		'-moz-border-radius': '10px',
-		opacity: .5,
-		color: '#fff'
-	} });	
-	$.ajax({
-		url: "/sync/requests",
-		type: 'GET',
-		success: function (response) {
-			$.unblockUI();
-			initTable();
-			//alert(response.responseText);
-		}
-	});
+	if (confirm('Are you sure you want to sync request? This can be only done once a day.')){
+		$.blockUI({ css: {
+			border: 'none',
+			padding: '15px',
+			backgroundColor: '#000',
+			'-webkit-border-radius': '10px',
+			'-moz-border-radius': '10px',
+			opacity: .5,
+			color: '#fff'
+		} });	
+		$.ajax({
+			url: "/sync/requests",
+			type: 'GET',
+			success: function (response) {
+				$.unblockUI();
+				initTable();
+				//alert(response.responseText);
+			}
+		});
+	}
 }
 function priceSync(){
 	console.log('shop has closed');
