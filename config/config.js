@@ -8,7 +8,7 @@ var connection = sql.createConnection({
 });
 
 
-var hq_host = 'http://localhost:3001',
+var hq_host = 'http://localhost:3001',//'http://54.251.113.124',
 	outletid = 1;
 
 exports.sql = sql;

@@ -254,45 +254,52 @@ exports.syncInventoryAndRestock = function(callback) {
 			if(!error) {
 				console.log("Connected successfully!");
 				var addedList = body.addedList;
-				console.log("No. of new products : " + addedList.length);
-				var i, flag;
-				var product_query= '',
-					inventory_query = '';
-				for (i=0; i< addedList.length;i++) {
-					var current = addedList[i];
-					product_query += "INSERT INTO product select "+current['barcode']+","+connection.escape(current['name'])+","+current['cost_price']+
-								","+connection.escape(current['category'])+","+connection.escape(current['manufacturer'])+",\'ADDED\'" +
-									" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
-					/*if(i==(addedList.length - 1 ))
-						flag = 1;
+				if(addedList !== null) {
+					console.log("No. of new products : " + addedList.length);
+					var i, flag;
+					var product_query= '',
+						inventory_query = '';
+					for (i=0; i< addedList.length;i++) {
+						var current = addedList[i];
+						product_query += "INSERT INTO product select "+current['barcode']+","+connection.escape(current['name'])+","+current['cost_price']+
+									","+connection.escape(current['category'])+","+connection.escape(current['manufacturer'])+",\'ADDED\'" +
+										" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
+						/*if(i==(addedList.length - 1 ))
+							flag = 1;
 
-					callQuery(flag,query,current, outletid);*/
-					inventory_query += "INSERT INTO inventory select "+current['barcode']+",0,"+current['selling_price']+","+current['min_stock']+
-									" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+current['barcode']+");";
+						callQuery(flag,query,current, outletid);*/
+						inventory_query += "INSERT INTO inventory select "+current['barcode']+",0,"+current['selling_price']+","+current['min_stock']+
+										" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+current['barcode']+");";
 
-				}
-				if(product_query !== '') {
-					connection.query(product_query, function(err,rows,fields) {
-						if(!err) {
-								console.log(rows);
-							connection.query(inventory_query, function(err2,rows2,fields2) {
+					}
+					if(product_query !== '') {
+						connection.query(product_query, function(err,rows,fields) {
+							if(!err) {
+									console.log(rows);
+								connection.query(inventory_query, function(err2,rows2,fields2) {
 
-								if(!err2) {
-									console.log("NEW items successfully synced with HQ");
-								} else {
-									console.log("Error while adding to the INVENTORY table");
-								}
-								syncDeleted(callback);
-							});
-						} else {
-							console.log("Error while adding to the PRODUCT table");
-							console.log("Error : " +err);
-						}
-					});
+									if(!err2) {
+										console.log("NEW items successfully synced with HQ");
+									} else {
+										console.log("Error while adding to the INVENTORY table");
+									}
+									syncDeleted(callback);
+								});
+							} else {
+								console.log("Error while adding to the PRODUCT table");
+								console.log("Error : " +err);
+							}
+						});
+					} else {
+						console.log("No NEW products to be synced");
+						syncDeleted(callback);
+					}
+
 				} else {
-					console.log("No NEW products to be synced");
+					console.log("Unable to retrieve added");
 					syncDeleted(callback);
 				}
+				
 				
 				//now sync all products to be deleted
 			}
@@ -424,6 +431,9 @@ function syncRequests (callback) {
 							//update RECEIVED requests
 							updateReceivedRequests(callback);
 						});
+					} else {
+						console.log("Anomaly occured");
+						updateReceivedRequests(callback);
 					}
 				} else {
 					console.log("Error in connecting to the server");
