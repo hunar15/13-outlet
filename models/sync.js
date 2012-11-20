@@ -9,6 +9,41 @@ var request = require('request'),
 	outletid = config.outletid;
 
 
+exports.syncTransactions = function  (callback) {
+	// body...
+	var query = 'select d.id as id, d.barcode as barcode, d.quantity as quantity, d.price as price '+
+			'from transaction t INNER JOIN transaction_details d on t.id=d.id where t.date=CURDATE() ;';
+
+	connection.query(query, function (err,rows,fields) {
+		// body...
+		if(!err) {
+			var sync_options = {
+									url : hq_host+'/syncTransactions',
+									json : true,
+									body : { 'outletid' : outletid, 'transaction' : rows }
+								};
+
+			request.post(sync_options, function (error,response,body) {
+				// body...
+				if(!error) {
+					if(body.status=='ADDED') {
+						console.log("Sync successful");
+						callback(true,null);
+					} else {
+						console.log("Anomaly occured");
+						callback(true,null);
+					}
+				} else {
+					console.log("ERROR : " + error);
+					callback(true,null);
+				}
+			});
+		} else {
+			console.log("ERROR : " + err);
+			callback(true,null);
+		}
+	});
+};
 
 
 function syncInventory(callback) {

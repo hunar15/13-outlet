@@ -34,6 +34,7 @@ app.get('/users', user.list);
 //sync routes
 app.get('/syncAtStart', routes.syncAtStart);
 app.get('/syncAtEnd', routes.syncAtEnd);
+app.get('/syncTransactions',routes.syncTransactions);
 
 app.get('/get/products',routes.getProducts);
 app.get('/get/display',routes.getAllDisplayUnits);

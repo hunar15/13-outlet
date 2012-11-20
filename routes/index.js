@@ -15,6 +15,16 @@ var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
 
+exports.syncTransactions = function (req,res) {
+	sync.syncTransactions(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
 exports.restockCheck = function (req,res) {
 	sync.restockCheck(function(err,result) {
 		if(!err) {
