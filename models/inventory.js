@@ -138,8 +138,8 @@ function recomputeDiscontinuedSellingPrice (callback) {
 }
 exports.recomputeSellingPrice = function(callback) {
 	
-	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST( p.cost_price, ( ' +
-					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 1 * i.min_stock ) ' +
+	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST(1.05* p.cost_price, ( ' +
+					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 0.9 * i.min_stock ) ' +
 					'),2) AS new_price FROM product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
 					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode WHERE p.status <> \'ADDED\' AND p.status<>\'DISCONTINUED\';';
 
