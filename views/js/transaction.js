@@ -17,12 +17,28 @@ function initTable(){
 	});
 }
 
+function validItem(barcode, quantity){
+	var valid = true;
+	if (barcode == '' || quantity == '')
+		valid = false;
+	if (!parseInt(quantity)){
+		alert('Integers only')
+		valid = false;
+	}
+	if (parseInt(quantity)<0){
+		alert('Non-negative quantity only');
+		valid = false;
+	}
+	return valid;
+
+}
+
 function initAddItem(){
 
 	$('#add-item').click(function(){
 		var barcode = $('#inputBarcode').val();
 		var quantity = $('#inputQuantity').val();
-		if (barcode == '' || quantity == ''){
+		if (!validItem(barcode,quantity)){
 			$('#prompt-error').show();
 			return;
 		}
