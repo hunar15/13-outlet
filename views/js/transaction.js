@@ -106,12 +106,22 @@ function initAddTransaction(){
 				"list":itemList
 			},
 			success: function (response) {
-				initTable();
-				$('#addNewTransaction').modal('hide');
-				itemIdx = 0;
-				$('.items').remove();
-				totalPrice = 0;
-				$('#total-price').text(totalPrice);	
+				if (response.STATUS != "ERROR")	{
+					initTable();
+					$('#addNewTransaction').modal('hide');
+					itemIdx = 0;
+					$('.items').remove();
+					totalPrice = 0;
+					$('#total-price').text(totalPrice);	
+				}
+				else{
+					alert("Error processing transaction");
+					$('#addNewTransaction').modal('hide');
+					itemIdx = 0;
+					$('.items').remove();
+					totalPrice = 0;
+					$('#total-price').text(totalPrice);	
+				}	
 			}
 		});
 

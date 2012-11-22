@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Nov 19, 2012 at 04:37 PM
+-- Generation Time: Nov 22, 2012 at 04:32 AM
 -- Server version: 5.1.44
 -- PHP Version: 5.3.1
 
@@ -2126,6 +2126,7 @@ CREATE TABLE IF NOT EXISTS `request_details` (
 -- Table structure for table `sold_yesterday`
 --
 
+
 -- --------------------------------------------------------
 
 --
@@ -2137,7 +2138,7 @@ CREATE TABLE IF NOT EXISTS `transaction` (
   `cashier_id` char(4) NOT NULL,
   `date` date NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=713612 ;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=713614 ;
 
 --
 -- Dumping data for table `transaction`
@@ -8278,7 +8279,9 @@ INSERT INTO `transaction` (`id`, `cashier_id`, `date`) VALUES
 (713608, '3002', '2012-11-20'),
 (713609, '3002', '2012-11-20'),
 (713610, '3002', '2012-11-20'),
-(713611, '3002', '2012-11-20');
+(713611, '3002', '2012-11-20'),
+(713612, '3002', '2012-11-21'),
+(713613, '3002', '2012-11-21');
 
 -- --------------------------------------------------------
 
@@ -30515,7 +30518,10 @@ INSERT INTO `transaction_details` (`id`, `barcode`, `quantity`, `price`) VALUES
 (713606, 10290604, 100, 82.75),
 (713607, 46669933, 105, 91.3),
 (713610, 10290604, 100, 82.75),
-(713611, 10507781, 105, 61.8);
+(713611, 10507781, 105, 61.8),
+(713612, 10290604, 100, 82.75),
+(713612, 10507781, 100, 61.8),
+(713613, 10386392, 30, 56.15);
 
 -- --------------------------------------------------------
 
@@ -30529,6 +30535,13 @@ create view yesterday as select d.barcode as barcode, t.date as date, d.price as
 --
 
 create view sold_yesterday as select tb.barcode as barcode, tb.date as date, tb.price as price, SUM(tb.quantity) as total from yesterday tb group by tb.barcode;
+--
+-- Constraints for table `display`
+--
+--
+-- Constraints for dumped tables
+--
+
 --
 -- Constraints for table `display`
 --
