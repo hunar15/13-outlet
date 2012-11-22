@@ -30523,7 +30523,7 @@ INSERT INTO `transaction_details` (`id`, `barcode`, `quantity`, `price`) VALUES
 -- Table structure for table `yesterday`
 --
 
-create view yesterday as select d.barcode as barcode, t.date as date, d.price as price, d.quantity as quantity from transaction t inner join transaction_details d where t.id=d.id and t.date=SUBDATE(CURDATE,1);
+create view yesterday as select d.barcode as barcode, t.date as date, d.price as price, d.quantity as quantity from transaction t inner join transaction_details d where t.id=d.id and t.date=SUBDATE(CURDATE(),1);
 --
 -- Constraints for dumped tables
 --
