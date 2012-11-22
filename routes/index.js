@@ -5,12 +5,176 @@
 var mysql      = require('mysql'),
 	restock = require('../models/requests'),
 	inventory = require('../models/inventory'),
-	transaction = require('../models/transaction');
+	transaction = require('../models/transaction'),
+	product = require('../models/product'),
+	sync = require('../models/sync'),
+	display = require('../models/display');
 var config = require('../config/config'),
 	connection = config.connection;
 var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
+
+exports.syncTransactions = function (req,res) {
+	sync.syncTransactions(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.restockCheck = function (req,res) {
+	sync.restockCheck(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncRequests = function (req,res) {
+	sync.syncRequests(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncInventory = function (req,res) {
+	// body..
+	sync.syncInventoryAndRestock(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.syncRevenue = function (req,res) {
+	// body..
+	sync.syncRevenue(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.addDisplayUnit = function (req,res) {
+	display.addDisplayUnit(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+exports.receivedAll = function  (req,res) {
+	// body...
+	restock.receivedAll(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.getAllDisplayUnits = function (req,res) {
+	display.getAllDisplayUnits(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.updateDisplayUnit = function (req,res) {
+	display.updateDisplayUnit(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.deleteDisplayUnit = function (req,res) {
+
+	display.deleteDisplayUnit(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+exports.getProducts = function (req,res) {
+	product.getProducts(req.body,function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.viewRequests = function (req,res) {
+	restock.viewRequests(function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+exports.viewRequestDetails = function (req,res) {
+	restock.viewRequestDetails(req.body, function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.viewTransactions = function (req,res) {
+	transaction.viewTransactions( function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.viewTransactionDetails = function (req,res) {
+	console.log('hello');
+	transaction.viewTransactionDetails(req.body, function (err, result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+exports.getInventory = function (req,res) {
+	inventory.getInventory(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
 
 exports.recomputeSellingPrice = function (req,res) {
 	inventory.recomputeSellingPrice(function (err, result) {
@@ -42,9 +206,6 @@ exports.addTransaction = function (req,res) {
 	});
 };
 
-exports.index = function(req, res){
-  res.render('index', { title: 'Express' });
-};
 
 exports.setAsReceived = function(req,res) {
 	restock.setAsReceived(req.body,function(err, rows){
@@ -54,245 +215,6 @@ exports.setAsReceived = function(req,res) {
 			res.send(err);
 		}
 	});
-};
-
-exports.syncRequests = function (req, res) {
-	// body...
-	restock.syncRequests(function (err, result) {
-		res.send(result);
-	});
-};
-function syncUpdated(res) {
-	var get_updated = {
-								url : hq_host+'/syncUpdated',
-								json : true,
-								body : { 'outletid' : outletid }
-							};
-
-	console.log('Retrieving updated PRODUCT list..');
-
-	request.post(get_updated, function(error, response, body) {
-		if(!error) {
-
-			var ms_list = body.ms_list,
-				query = '';
-
-			console.log(ms_list);
-			if(ms_list.length !== 0) {
-				//update min_stock
-				/*
-				{
-					ms_list : [
-						{
-							barcode : "",
-							min_stock : "",
-						},...
-					]
-				}
-				*/
-				for(var i in ms_list) {
-					var current = ms_list[i];
-					query += 'UPDATE inventory SET min_stock='+current['min_stock']+' WHERE barcode=' + current['barcode']+' ;';
-				}
-				connection.query(query, function (err,rows,fields) {
-					if(!err) {
-						console.log(ms_list.length + " PRODUCTS updated successfully");
-						res.send({"STATUS":"SUCCESS"});
-					} else {
-						console.log(' ERROR occured : ' + err);
-						res.send({"STATUS":"ERROR"});
-					}
-				});
-			} else {
-				console.log("No products to be UPDATED");
-				res.send({"STATUS":"SUCCESS"});
-			}
-		} else {
-			console.log("ERROR occured : " + error);
-			res.send({"STATUS":"ERROR"});
-		}
-	});
-}
-
-function syncDeleted(res) {
-	var get_deleted = {
-				url : hq_host+'/getDiscontinued',
-				json : true,
-				body : { 'outletid' : outletid }
-			};
-	request.post( get_deleted, function (error, response, body2) {
-		if(!error) {
-			//console.log("Response message : " + body2);
-			var discontinueList = body2.discontinueList,
-				discontinue_query = '';
-			for (var i in discontinueList) {
-				var current = discontinueList[i];
-				discontinue_query += "UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=" + current.barcode+";";
-				//callDiscontinueQuery(query,current);
-			}
-			if(discontinue_query !== '') {
-				connection.query(discontinue_query, function(err,rows,fields) {
-					if(!err) {
-						console.log("DISCONTINUED products successfully synced");
-					//	res.send({"status" : "SUCCESS"});
-					} else {
-						console.log("Error occured while syncing DISCONTINUED products");
-						console.log("Error : " + err);
-					//	res.send({"status" : "ERROR"});
-					}
-					//sync updated products
-					syncUpdated(res);
-				});
-			} else {
-				console.log("No products to be DISCONTINUED");
-				//res.send({"status" : "SUCCESS"});
-				//sync updated products
-				syncUpdated(res);
-			}
-		} else {
-			//res.send({"status" : "ERROR"});
-			//sync updated products
-			syncUpdated(res);
-		}
-	});
-}
-
-function callDiscontinueQuery(query,current) {
-	connection.query(query, function(err, rows,fields) {
-		if(!err)
-			console.log(current.barcode + "discontinued.");
-	});
-}
-
-exports.syncWithHQ = function(req, res) {
-		//find errors in arguments if any
-		//create http request to hq server
-		/*
-		(need to split 1 and 2?)
-		1. sync inventory
-			a. retrieve added product list for outlet
-			b. add products to list that arent there in both product AND inventory
-			c. place stock requests for new items
-		2. sync stock requests
-			a. check status of past requests
-			b. change ones that are necessary
-		*/
-		var get_added = {
-								url : hq_host+'/getAdded',
-								json : true,
-								body : { 'outletid' : outletid }
-							};
-		if ( outletid !== null ) {
-			console.log('Connecting to HQ Server..');
-			request.post( get_added, function (error, response, body) {
-				if(!error) {
-					console.log("Connected successfully!");
-					var addedList = body.addedList;
-					console.log("No. of new products : " + addedList.length);
-					var i, flag;
-					var product_query= '',
-						inventory_query = '';
-					for (i=0; i< addedList.length;i++) {
-						var current = addedList[i];
-						product_query += "INSERT INTO product select "+current['barcode']+",\'"+current['name']+"\',"+current['cost_price']+",\'"+current['category']+"\',\'"+current['manufacturer']+"\',\'NORMAL\'" +
-										" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
-						/*if(i==(addedList.length - 1 ))
-							flag = 1;
-
-						callQuery(flag,query,current, outletid);*/
-						inventory_query += "INSERT INTO inventory select "+current['barcode']+",0,"+current['selling_price']+","+current['min_stock']+
-										" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+current['barcode']+");";
-
-					}
-					if(product_query !== '') {
-						connection.query(product_query, function(err,rows,fields) {
-							if(!err) {
-									console.log(rows);
-								connection.query(inventory_query, function(err2,rows2,fields2) {
-
-									if(!err2) {
-										console.log("NEW items successfully synced with HQ");
-									} else {
-										console.log("Error while adding to the INVENTORY table");
-									}
-								});
-							} else {
-								console.log("Error while adding to the PRODUCT table");
-								//console.log("Error : " +err);
-							}
-						});
-					} else {
-						console.log("No NEW products to be synced");
-					}
-					
-					//now sync all products to be deleted
-					syncDeleted(res);
-				}
-			} );
-		} else {
-			console.log("Invalid or absent parameters.");
-		}
-};
-
-exports.syncRevenue = function (req, res) {
-	// find errors in arguments if any
-	var result = {};
-	if (outletid !== null) {
-		var query = 'SELECT distinct date, SUM(price * total) as revenue FROM sold_yesterday;';
-
-		connection.query(query, function ( err, rows, fields ) {
-			if(!err) {
-				result['date'] = rows[0]['date'];
-				result['revenue'] = rows[0]['revenue'];
-
-				var query_2 = 'SELECT barcode, MAX(price * total) as revenue FROM sold_yesterday GROUP BY barcode;';
-
-				connection.query(query_2, function(err2,rows2,fields2) {
-					if(!err2) {
-						result['barcode'] = rows2[0]['barcode'];
-						result['outlet_id'] = outletid;
-
-						console.log("Revenue details successfully retrieved");
-						var post_options = {
-								url : hq_host+'/syncRevenue',
-								json : true,
-								body : result
-							};
-
-						console.log("Syncing revenue with HQ...");
-
-						//post sync request to HQ
-						request.post(post_options, function(error, response, body) {
-							if(!error) {
-								if(body['STATUS'] === "SUCCESS") {
-									console.log("Revenue successfully synced with HQ");
-									res.send({"STATUS" : "SUCCESS"});
-								} else {
-									console.log(body['STATUS']);
-									res.send({"STATUS" : "ERROR"});
-								}
-							} else {
-								console.log("Error encountered");
-								console.log("ERROR : " + error);
-								res.send({"STATUS" : "ERROR"});
-							}
-						});
-					} else {
-						console.log("Error encountered");
-						console.log("ERROR : " + err2);
-						res.send({"STATUS" : "ERROR"});
-					}
-				});
-			} else {
-				console.log("Error encountered");
-				console.log("ERROR : " + err);
-				res.send({"STATUS" : "ERROR"});
-			}
-		});
-	} else {
-		console.log("Invalid or absent parameters");
-		res.send({"STATUS" : "ERROR"});
-	}
 };
 
 var t_errorFlag = 0;
@@ -307,44 +229,58 @@ exports.getPrice = function(req,res) {
 	});
 };
 
-function restockCheck (callback) {
-	var restockCheckQuery = '';
-	restockCheckQuery = "SELECT barcode, CEIL(min_stock * 2) as quantity FROM inventory where stock <= min_stock " +
-						" AND NOT EXISTS( select * FROM batch_request b INNER JOIN request_details d" +
-						" ON b.date=d.date AND d.barcode=barcode AND ( b.status=\'ADDED\' OR b.status=\'SENT\'));";
-	connection.query(restockCheckQuery, function(err2,rows2,fields2) {
-		if(!err2) {
-			var result = {};
-			result['requestList'] = rows2;
-			restock.addRequest(result, function(err3, res3) {
-				if(!err3) {
-					//create restock requests
-					console.log("RESTOCK REQUEST operation successfully completed");
-					callback(null,true);
-				} else {
-					console.log("Error while add RESTOCK REQUESTS");
-					console.log("Error : " + err3);
-					callback(true,null);
-				}
-			});
+exports.getBarcodes = function (req, res) {
+	product.getBarcodes(req.body, function(err,result){
+		if(err !== null) {
+			res.send(err);
 		} else {
-			console.log("Error while calculating PRODUCTS which require restock");
-			console.log("Error : " + err2);
-			callback(true,null);
+			res.send(result);
 		}
 	});
 }
 
-exports.restockCheck = function  (req,res) {
-	restockCheck(function(err,result) {
-		if(!err) {
-			res.send({"STATUS" : "SUCCESS"});
+exports.syncAtEnd = function (req, res) {
+	var query = 'UPDATE product set status=\'NORMAL\' where status=\'ADDED\';';
+
+	connection.query( query, function  (err3, result3) {
+		// body...
+		if(!err3) {
+			console.log("Status of ADDED products changed to NORMAL");
 		} else {
-			console.log("Error encountered");
-			console.log("Error : " + err);
+			console.log("ERROR : "+ err3);
+		}
+		sync.syncInventoryAndRestock(function (err, result1) {
+			if(!err) {
+				inventory.recomputeSellingPrice(function (err2, result2) {
+					if(!err2) {
+						res.send({"STATUS" : "SUCCESS"});
+					} else {
+						res.send({"STATUS" : "ERROR"});
+					}
+				});
+			} else {
+				console.log("ERROR encountered while syncing inventory and restock requests");
+				res.send({"STATUS" : "ERROR"});
+			}
+		});
+	});
+};
+
+exports.syncAtStart = function (req,res) {
+	sync.syncInventoryAndRestock(function (err, result) {
+		if(!err) {
+			sync.syncRevenue(function (err, result) {
+				if(!err) {
+					res.send({"STATUS" : "SUCCESS"});
+				} else {
+					res.send({"STATUS" : "ERROR"});
+				}
+			});
+		} else {
+			console.log("ERROR encountered while syncing inventory and restock requests");
 			res.send({"STATUS" : "ERROR"});
 		}
-	});a
+	});
 };
 
 exports.processTransaction = function (req, res) {
@@ -382,35 +318,34 @@ exports.processTransaction = function (req, res) {
 				console.log("Bill processed without errors");
 				result['errors'] = false;
 				//carry out product stock request check
-				restockCheck( function(err2, res2) {
-					if(!err2) {
-						//add to transaction table
-						transaction.addTransaction(result, function (err3, res3) {
-							if(!err3) {
-								console.log("TRANSACTION successfully completed");
-								res.send({ "STATUS" : "SUCCESS"});
+				
+				//add to transaction table
+				transaction.addTransaction(result, function (err3, res3) {
+					if(!err3) {
+						console.log("TRANSACTION successfully completed");
+						console.log("Computing RESTOCK check ...");
+						sync.restockCheck(function(err,result) {
+							if(!err) {
+								res.send({"STATUS" : "SUCCESS"});
 							} else {
-								console.log(err3);
-								res.send({ "STATUS" : "FAIL"});
+								res.send({"STATUS" : "ERROR"});
 							}
 						});
-						
 					} else {
-                        console.log(err2);
-						res.send({ "STATUS" : "FAIL"});
+						console.log(err3);
+						res.send({ "STATUS" : "ERROR"});
 					}
 				});
-				
+						
 			} else {
 				console.log("Bill processed with errors");
 				console.log(err);
-				res.send({"ERROR" : true});
-                            
+				res.send({ "STATUS" : "ERROR"});
 			}
 		});
 		//res.send(result);
 	} else {
 		console.log("Absent parameters");
-		res.send({error:true});
+		res.send({ "STATUS" : "ERROR"});
 	}
 };

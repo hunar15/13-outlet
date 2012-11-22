@@ -11,6 +11,7 @@
     "mysql": "*",
     "serialport": "*",
     "request" : "*",
+    "ejs":"*",
     "underscore":"*"
   }
 }

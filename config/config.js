@@ -7,8 +7,8 @@ var connection = sql.createConnection({
   multipleStatements : true
 });
 
-
-var hq_host = 'http://localhost:3001',
+//'http://localhost:3001'
+var hq_host = 'http://54.251.113.124',
 	outletid = 1;
 
 exports.sql = sql;
