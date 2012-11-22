@@ -280,7 +280,7 @@ function generateDetails(rowIndex) {
 			detailedEditableGrid.filter('');
 			$('#restock-date').text(date);
 			$('#restockDetails').modal('show');
-			if (status != "DISPATCHED")
+			if (status != "DISPATCHED" || status != "INCOMPLETE")
 				$('.received-check').attr("disabled","disabled");
 			else
 				$('.received-check').removeAttr("disabled","disabled");	

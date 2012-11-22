@@ -47,7 +47,7 @@ function transactionSync(){
 	});
 }
 function requestSync(){
-	if (confirm('Are you sure you want to sync request? This can be only done once a day.')){
+	//if (confirm('Are you sure you want to sync request? This can be only done once a day.')){
 		$.blockUI({ css: {
 			border: 'none',
 			padding: '15px',
@@ -66,7 +66,7 @@ function requestSync(){
 				//alert(response.responseText);
 			}
 		});
-	}
+	//}
 }
 function priceSync(){
 	console.log('shop has closed');
