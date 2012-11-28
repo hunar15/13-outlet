@@ -5,7 +5,10 @@ import requests
 import json
 import re
 PORT = "COM1"
-cashiers = {'a':'0001'}#,'b':'0002','c':'0003'}
+PRE_ADDRESS = '```'
+RECV_PAYLOAD_LEN = 15
+SEND_PAYLOAD_LEN = 6
+cashiers = {0x01:'0001'}#,'b':'0002','c':'0003'}
 shoppc = "http://localhost:3000"
 class Transaction:
     def __init__(self):
@@ -67,7 +70,7 @@ def handle(cid, barcode, quantity, t, ser_write, ser_read):
 
     
 def parse(message):
-    if len(message) != 13:
+    if len(message) != RECV_PAYLOAD_LEN - 1:
         print(message+"is illegal")
         return 
     m = re.search('([0-9]{8}):([0-9]+)',message)
@@ -75,15 +78,16 @@ def parse(message):
 
 def main():
     ser = create_connection()
-    ser_write = lambda x: ser.write(str(x).zfill(8))
+    ser_write = lambda x: ser.write(str(x).zfill(SEND_PAYLOAD))
     ser_read = lambda x: ser.read(x)
     transactions = Transaction()
     for cid in cashiers:
+        ser.write(PRE_ADDRESS)
         ser.write(cid)
         fst = ser.read(1)
         #provisional as of now I echo the id.
         if fst == '!':
-            rest = ser.read(13)
+            rest = ser.read(RECV_PAYLOAD_LEN - 1)
             whole = rest
             print(whole)
             barcode, quantity = parse(whole)
@@ -101,6 +105,6 @@ def test():
     bar = '30011470'
     quantity = 1000
     t = Transaction()
-    handle('a',bar,quantity,t,outp,inp)
+    handle(0x01,bar,quantity,t,outp,inp)
     b2 = '18243337'
-    handle('a',b2,quantity, t,outp,inp)
+    handle(0x01,b2,quantity, t,outp,inp)

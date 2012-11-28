@@ -1,0 +1,36 @@
+If you are reading this, well done.
+You can share large files with your friends using Sunfire
+
+#################################################
+To copy files from your computer to this location:
+
+    scp <path to your file> <your unixid>@sunfire.comp.nus.edu.sg:/tmp/temp/.
+Eg.
+    scp README.txt user@sunfire.comp.nus.edu.sg:/tmp/temp/. 
+
+You'll be prompted for your password.
+Once transfer is done, you need to modify the file permission, so others
+could access it.
+
+(Let's just give all permission)
+
+chmod 777 <your file>
+
+And you are done.
+###############################################
+
+
+
+
+
+##############################################
+To copy files from here to your computer:
+
+    scp <your unix id>@sunfire.comp.nus.edu.sg:/tmp/temp/<path to file>
+        <path to where you want to save your file>
+Eg.
+    scp user@sunfire.comp.nus.edu.sg:/tmp/temp/README.txt ~/Downloads/.
+
+You'll be prompted for your password.
+Wait for transfer to be completed, and you're done.
+#############################################
