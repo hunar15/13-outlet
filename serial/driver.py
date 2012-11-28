@@ -14,12 +14,16 @@ class Transaction:
     def __init__(self):
         self.items = {}
         for i in cashiers:
-            self.items[i]=[]
+            self.items[i]={}
 
     def addItem(self,cashier,item):
-        self.items[cashier].append(item)
+        self.items[cashier][item['barcode']] = item
     def finalize(self, cashier):
-        item = self.items[cashier]
+        item = []
+        #convert dict to list
+        for barcode in self.items[cashier]:
+            item.append(self.items[cashier][barcode])
+
         payload = {
             'cashier': cashiers[cashier],
             'list': item
@@ -64,10 +68,7 @@ def handle(cid, barcode, quantity, t, ser_write, ser_read):
     print("price: "+str(price))
     ser_write(price)
     t.addItem(cid, item_wrap(barcode,quantity,price))
-    h = ser_read(1)
-    if h == "#":
-        t.finalize(cid)
-
+    
     
 def parse(message):
     if len(message) != RECV_PAYLOAD_LEN - 1:
@@ -92,12 +93,84 @@ def main():
             print(whole)
             barcode, quantity = parse(whole)
             handle(cid, barcode, quantity,transactions, ser_write, ser_read)
+            
+    
+def parse(message):
+    if len(message) != RECV_PAYLOAD_LEN - 1:
+        print(message+"is illegal")
+        return 
+    m = re.search('([0-9]{8}):([0-9]+)',message)
+    return m.groups(0)
+
+def main():
+    ser = create_connection()
+    ser_write = lambda x: ser.write(str(x).zfill(SEND_PAYLOAD))
+    ser_read = lambda x: ser.read(x)
+    transactions = Transaction()
+    for cid in cashiers:
+        ser.write(PRE_ADDRESS)
+        ser.write(cid)
+        fst = ser.read(1)
+        #provisional as of now I echo the id.
+        if fst == '!':
+            rest = ser.read(RECV_PAYLOAD_LEN - 1)
+            whole = rest
+            print(whole)
+            barcode, quantity = parse(whole)
+            handle(cid, barcode, quantity,transactions, ser_write, ser_read)
+            
+    
+def parse(message):
+    if len(message) != RECV_PAYLOAD_LEN - 2:
+        print(message+"is illegal")
+        return 
+    m = re.search('([0-9]{8}):([0-9]+)',message)
+    return m.groups(0)
+
+def main():
+    ser = create_connection()
+    ser_write = lambda x: ser.write(str(x).zfill(SEND_PAYLOAD))
+    ser_read = lambda x: ser.read(x)
+    transactions = Transaction()
+    for cid in cashiers:
+        ser.write(PRE_ADDRESS)
+        ser.write(cid)
+        fst = ser.read(1)
+        #provisional as of now I echo the id.
+        if fst == '!':
+            rest = ser.read(RECV_PAYLOAD_LEN - 2)
+            whole = rest
+            print(whole)
+            barcode, quantity = parse(whole)
+            handle(cid, barcode, quantity,transactions, ser_write, ser_read) 
             price_ack =ser_read(8)
             print("price ack : "+price_ack)
+            eot = ser_read(1)
+            if (eot == "#"):
+                transactions.finalize(cid)
     
 
 #if __name__ == '__main__':
 #    poll()
+def bare_test():
+    inp = lambda : raw_input()
+    outp = lambda x: print(x)
+    t = Transaction()
+    while(True):
+        for cid in cashiers:
+            outp(PRE_ADDRESS)
+            outp(cid)
+            fst = inp()
+            if fst == '!':
+                rest = inp()
+                print("echo="+rest)
+                barcode,q = parse(rest)
+                handle(cid, barcode, q, t, outp, inp)
+                price_ack = inp()
+                print("price ack: "+price_ack)
+                eot = inp()
+                if (eot == "#"):
+                    t.finalize(cid)
     
 def test():
     inp = lambda x: raw_input()
