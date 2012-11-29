@@ -2,6 +2,30 @@ var config = require('../config/config');
 
 var connection = config.connection;
 
+exports.getProductDetails = function (args, callback) {
+	var display_id = args.display_id;
+
+	if( display_id !== undefined) {
+		var query = 'SELECT  d.barcode as barcode,p.name as name, i.selling_price as price, floor(ifnull(y.price,0)'+
+			'/i.selling_price) as flag from product p inner join display d on p.barcode = d.barcode inner join inventory i on d.barcode=i.barcode left join sold_yesterday y '+
+			'on y.barcode=d.barcode WHERE d.display_id='+connection.escape(display_id)+' ;';
+
+		connection.query(query, function (err,rows,fields) {
+			// body...
+			if(!err) {
+				console.log(rows);
+				callback(null,rows);
+			} else {
+				console.log("ERROR : " +err);
+				callback(true,null);
+			}
+		});
+	} else {
+		console.log("Invalid or absent parameters");
+		callback(true,null);
+	}
+};
+
 exports.addDisplayUnit = function (args,callback) {
 	// body...
 	var barcode = args.barcode,
