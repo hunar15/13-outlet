@@ -4,7 +4,8 @@ var connection = sql.createConnection({
   user     : 'root',
   password : '',
   database : 'outletdb',
-  multipleStatements : true
+  multipleStatements : true,
+  insecureAuth : true
 });
 
 function handleDisconnect(connection) {

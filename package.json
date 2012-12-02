@@ -14,6 +14,7 @@
     "ejs":"*",
     "underscore":"*",
     "time":"*",
-    "cron":""
+    "cron":"",
+    "async":""
   }
 }

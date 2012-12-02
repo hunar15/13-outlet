@@ -3,7 +3,8 @@ var restock = require('../models/requests'),
 	transaction = require('../models/transaction'),
 	product = require('../models/product');
 var config = require('../config/config'),
-	connection = config.connection;
+	connection = config.connection,
+	packet = require('../models/packet');
 var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid,
@@ -116,9 +117,26 @@ function pushTransactions () {
 
 function pushInventoryDetailsToHQ(callback) {
 	// body...
-	var query = 'select barcode,stock,selling_price from inventory;';
+	var query = 'select barcode,stock,selling_price from inventory;',
 
-	connection.query(query, function (err,rows,fields) {
+		push_options = {
+			'query' : query,
+			'length' : 2000,
+			'url' : '/pushInventoryToHQ',
+			'data' : {
+				'outletid' : outletid
+			}
+		};
+
+		packet.push(push_options, function (err,result) {
+			// body...
+			if(!err) {
+				console.log('Inventory successfully PUSHED to HQ');
+			} else {
+				console.log("Error occured on HQ");
+			}
+		});
+/*	connection.query(query, function (err,rows,fields) {
 		// body...
 		if(!err) {
 			var pushToHQ = {
@@ -148,29 +166,37 @@ function pushInventoryDetailsToHQ(callback) {
 			console.log("Error : " + err);
 			//callback(true,null);
 		}
-	});
+	});*/
 
 }
 function pullInventoryFromHQ() {
 	console.log("Syncing INVENTORY with HQ...");
 
-	var inventoryRetrievalOptions = {
-							url : hq_host+'/syncAll',
-							json : true,
-							body : { 'outletid' : outletid }
-						};
+	var pull_options = {
+			probeUrl : '/getInventorySize',
+			length : 2000,
+			dataUrl : '/syncAll',
+			data : {
+				'outletid' : outletid
+			}
+		};
 
-	request.post(inventoryRetrievalOptions, function(error,response,body) {
-		if(!error) {
-			var list = body.list,
-				query = '';
+	packet.pull(pull_options, function (err,result) {
+		// body...
+		if(!err) {
+			console.log("Size of Inventory : "+ result.length);
+			console.log('Inventory successfully PULLED FROM HQ');
+			//connection.connect();
+			var list = result,
+				added_query = '',
+				query = '',
 				update_flag = 0,
 				discontinue_flag = 0;
 			if( list !== undefined ) {
 				if( list.length !== 0) {
 					for(var i in list) {
 						var current = list[i];
-						
+						console.log(i);
 						switch(current.status) {
 							case "ADDED" :
 								query += 'INSERT INTO product SELECT '+current.barcode+','+
@@ -210,7 +236,6 @@ function pullInventoryFromHQ() {
 							' WHERE d.date=b.date ) AND b.status=\'ADDED\';';
 					}
 					//call query
-
 					connection.query(query,function (err,rows,fields) {
 						// body...
 						if(!err) {
@@ -272,11 +297,20 @@ function pullInventoryFromHQ() {
 				retry(pullInventoryFromHQ,2);
 			}
 		} else {
-			console.log(' ERROR occured : ' + error);
+			//console.log(' ERROR occured : ' + error);
 			//restockCheck(callback);
 			retry(pullInventoryFromHQ,2);
 		}
 	});
+	/*var inventoryRetrievalOptions = {
+							url : hq_host+'/syncAll',
+							json : true,
+							body : { 'outletid' : outletid }
+						};
+
+	request.post(inventoryRetrievalOptions, function(error,response,body) {
+		
+	});*/
 }
 
 function restockCheck (callback) {
