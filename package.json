@@ -12,6 +12,9 @@
     "serialport": "*",
     "request" : "*",
     "ejs":"*",
-    "underscore":"*"
+    "underscore":"*",
+    "time":"*",
+    "cron":"",
+    "async":""
   }
 }

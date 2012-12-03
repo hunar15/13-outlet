@@ -80,10 +80,10 @@ exports.addRequest =  function(args, callback) {
 	*/
 	//check if current date order tuple exists in the db
 	var query = 'INSERT INTO batch_request(date,status) SELECT CURDATE(),\'ADDED\' FROM DUAL WHERE ' +
-				'NOT EXISTS(SELECT * FROM batch_request WHERE date=CURDATE());';
+				'NOT EXISTS(SELECT * FROM batch_request b WHERE b.date=CURDATE());';
 		requestList = args.requestList;
 
-	if (requestList !== null) {
+	if (requestList.length !== 0) {
 		console.log("Creating stock requests for required PRODUCTS...");
 		connection.query( query,  function(err, rows, fields) {
 			if(!err) {
@@ -118,7 +118,8 @@ exports.addRequest =  function(args, callback) {
 			}
 		});
 	} else {
-
+		console.log("Nothing to RESTOCK");
+		callback(null,true);
 	}
 };
 
@@ -151,34 +152,33 @@ exports.receivedAll = function (args, callback) {
 	// body...
 	var date = args.date;
 
-	if(date !== null) {
+	if(date !== undefined) {
 		var query = "UPDATE inventory i inner join request_details r on r.barcode=i.barcode set i.stock=i.stock +" +
 						" r.quantity where r.date=\'"+date+"\' AND r.received=0;";
-			query +="UPDATE batch_request SET status=\'RECEIVED\' WHERE date=\'"+date+"\' ;";
-		
+			query +="UPDATE batch_request SET status=\'COMPLETED\' WHERE date=\'"+date+"\' ;";
+			query += "UPDATE request_details SET received=1 WHERE date=\'"+date+"\';";
 
-		connection.query(query, function(err,rows, fields) {
-			if(!err) {
-				console.log(query);
-				//callback(null,true);
-
-				//check if all products in the batch have been received and update
-				
-				var query2 = "UPDATE request_details SET received=1 WHERE date=\'"+date+"\';";
-				connection.query(query2, function(err2,rows2,fields2) {
-					if(!err2) {
-						console.log("Batch Request COMPLETED");
-						callback(null,true);
-					} else {
-						console.log("Error encountered : "+ err2);
-						callback(true,null);
-					}
-				});
+		request.post({url : hq_host+'/stock/receivedAll',json :true, body: {'outletid' : outletid, 'date' : date}}, function(error,response,body){
+			if(!error) {
+				if(body['STATUS'] == "COMPLETED") {
+					console.log("Updating received stock on HQ..");
+					connection.query(query, function(err,rows, fields) {
+						if(!err) {
+							console.log("Restock request for " + date + " successfully COMPLETED");
+							callback(null,true);
+							//check if all products in the batch have been received and update
+						} else {
+							console.log("Error encountered : " + err);
+							callback(true,null);
+						}
+					});
+				}
 			} else {
-				console.log("Error encountered : " + err);
+				console.log("Unable to sync with HQ\nError : " + error);
 				callback(true,null);
 			}
 		});
+		
 	} else {
 		console.log("Invalid or absent parameters");
 		callback(true,null);
@@ -189,40 +189,31 @@ exports.setAsReceived = function(args, callback) {
 		barcode = args.barcode,
 		quantity = args.quantity;
 
-	if(quantity!== null && date!==null && barcode!==null) {
+	if(quantity!== undefined && date!==undefined && barcode!==undefined) {
 		var query = "UPDATE request_details SET received=1 WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
+		query += "UPDATE batch_request SET status=\'INCOMPLETE\' WHERE date=\'"+date+"\' ;";
+		query += "UPDATE inventory SET stock=stock+"+quantity+" WHERE barcode="+barcode+";";
+		query += "UPDATE batch_request SET status=\'COMPLETED\' WHERE date=\'"+date+"\'"+
+				" AND NOT EXISTS( SELECT * from request_details WHERE date=\'"+date+"\' AND received=0);";
 
-		connection.query(query, function(err,rows, fields) {
-			if(!err) {
-				console.log(query);
-				console.log("Barcode : " + barcode + " RECEIVED");
-				//callback(null,true);
-
-				//check if all products in the batch have been received and update
-				var query2 ="UPDATE batch_request SET status=\'INCOMPLETE\' WHERE date=\'"+date+"\' ;";
-					query2 += "UPDATE inventory SET stock=stock+"+quantity+" WHERE barcode="+barcode+";";
-
-				connection.query(query2, function(err2,rows2,fields2) {
-					if(!err2) {
-						var query3 = "UPDATE batch_request SET status=\'RECEIVED\' WHERE date=\'"+date+"\'"+
-							" AND NOT EXISTS( SELECT * from request_details WHERE date=\'"+date+"\' AND received=\'false\')";
-
-						connection.query(query3, function(err3, rows3, fields3) {
-							if(!err3) {
-								console.log("Batch Request COMPLETED");
-								callback(null,true);
-							} else {
-								console.log("Error encountered : " + err3);
-								callback(true,null);
-							}
-						});
-					} else {
-						console.log("Error encountered : "+ err2);
-						callback(true,null);
-					}
-				});
+		request.post({url : hq_host+'/stock/received',json :true, body: {'outletid' : outletid,
+				'date' : date, 'barcode' : barcode}}, function(error,response,body){
+			if(!error) {
+				if(body['STATUS'] === "COMPLETED") {
+					console.log("Updating received stock of "+ barcode +"on HQ..");
+					connection.query(query, function(err,rows, fields) {
+						if(!err) {
+							console.log("Restock request for " + barcode + " updated on HQ");
+							callback(null,true);
+							//check if all products in the batch have been received and update
+						} else {
+							console.log("Error encountered : " + err);
+							callback(true,null);
+						}
+					});
+				}
 			} else {
-				console.log("Error encountered : " + err);
+				console.log("Unable to update on HQ\nError : " + error);
 				callback(true,null);
 			}
 		});

@@ -3,170 +3,314 @@ var restock = require('../models/requests'),
 	transaction = require('../models/transaction'),
 	product = require('../models/product');
 var config = require('../config/config'),
-	connection = config.connection;
+	connection = config.connection,
+	packet = require('../models/packet');
 var request = require('request'),
 	hq_host = config.hq_host,
-	outletid = config.outletid;
+	outletid = config.outletid,
+    cronJob = require('cron').CronJob;
+
+var pullTimeOutTries,
+	endOfDayOptions,
+	pullInventoryJob,
+	pushInventoryJob,
+	startOfDayOptions;
 
 
-exports.syncTransactions = function  (callback) {
+
+
+initSyncOptions();
+startSyncOptions();
+
+function startSyncOptions () {
+	//console.log('WTF!!');
+	if(pushInventoryJob !== undefined)
+		pushInventoryJob.stop();
+	startOfDayOptions = {
+						cronTime : '30 6 * * *',
+
+						onTick : startOfDaySync,
+						start : false,
+						timeZone :'Singapore'
+					};
+	pushInventoryJob = new cronJob(startOfDayOptions);
+	pushInventoryJob.start();
+	resetTimeOutTries();
+}
+
+function startOfDaySync () {
 	// body...
+	inventory.recomputeSellingPrice(function (err,result) {
+		// body...
+		if(!err) {
+			pushInventoryDetailsToHQ();
+		} else {
+			console.log("Error occured while recomputing prices");
+		}
+	});
+
+}
+function initSyncOptions () {
+	//console.log('WTF!!');
+	if(pullInventoryJob !== undefined)
+		pullInventoryJob.stop();
+	endOfDayOptions = {
+						cronTime : '30 23 * * *',
+
+						onTick : endOfDaySync,
+						start : false,
+						timeZone :'Singapore'
+					};
+	pullInventoryJob = new cronJob(endOfDayOptions);
+	pullInventoryJob.start();
+	resetTimeOutTries();
+}
+
+function resetTimeOutTries() {
+	pullTimeOutTries = 16;
+}
+
+function pushTransactions () {
+	// body...
+	console.log('Pushing TRANSACTIONS TO HQ..');
 	var query = 'select d.id as id, d.barcode as barcode, d.quantity as quantity, d.price as price '+
 			'from transaction t INNER JOIN transaction_details d on t.id=d.id where t.date=CURDATE() ;';
 
 	connection.query(query, function (err,rows,fields) {
 		// body...
 		if(!err) {
-			var sync_options = {
-									url : hq_host+'/syncTransactions',
+			if(rows.length !== 0) {
+				var sync_options = {
+									url : hq_host+'/pushTransactions',
 									json : true,
 									body : { 'outletid' : outletid, 'transaction' : rows }
 								};
 
-			request.post(sync_options, function (error,response,body) {
-				// body...
-				if(!error) {
-					if(body.status=='ADDED') {
-						console.log("Sync successful");
-						callback(true,null);
+				request.post(sync_options, function (error,response,body) {
+					// body...
+					if(!error) {
+						if(body.status=='ADDED') {
+							console.log("TRANSACTIONS successfully PUSHED");
+							initSyncOptions();
+							pushNewRequests();
+						} else {
+							console.log("Anomaly occured");
+							retry(pushTransactions,2);
+						}
 					} else {
-						console.log("Anomaly occured");
-						callback(true,null);
+						console.log("ERROR : " + error);
+						retry(pushTransactions,2);
 					}
-				} else {
-					console.log("ERROR : " + error);
-					callback(true,null);
-				}
-			});
+				});
+			} else {
+				console.log("No TRANSACTIONS to push");
+				initSyncOptions();
+				pushNewRequests();
+			}
+			
 		} else {
 			console.log("ERROR : " + err);
-			callback(true,null);
+			retry(pushTransactions,2);
 		}
 	});
-};
+}
 
+function pushInventoryDetailsToHQ(callback) {
+	// body...
+	var query = 'select barcode,stock,selling_price from inventory;',
 
-function syncInventory(callback) {
-	console.log("Syncing INVENTORY with HQ...");
+		push_options = {
+			'query' : query,
+			'length' : 2000,
+			'url' : '/pushInventoryToHQ',
+			'data' : {
+				'outletid' : outletid
+			}
+		};
 
-	var query_2= 'SELECT * from inventory;';
-	connection.query(query_2, function (err2,rows2, fields2) {
+		packet.push(push_options, function (err,result) {
+			// body...
+			if(!err) {
+				console.log('Inventory successfully PUSHED to HQ');
+			} else {
+				console.log("Error occured on HQ");
+			}
+		});
+/*	connection.query(query, function (err,rows,fields) {
 		// body...
-		if(!err2) {
-			var update_options = {
-									url : hq_host+'/syncAll',
-									json : true,
-									body : { 'outletid' : outletid, 'inventory' : rows2 }
-								};
-			request.post(update_options, function(error2,response2,body2) {
-				if(!error2) {
-					if(body2["STATUS"] === "SUCCESS") {
-						console.log("COMPLETE Sync successful");
-					//	callback(null,true);
+		if(!err) {
+			var pushToHQ = {
+				url : hq_host+'/pushInventoryToHQ',
+				json : true,
+				body : { 'outletid' : outletid, 'list' : rows }
+			};
+
+			request.post(pushToHQ, function(error,response,body) {
+				if(!error) {
+					if(body['STATUS'] === 'SUCCESS') {
+						console.log('Inventory successfully PUSHED to HQ');
+						//callback(null,{'STATUS' : 'SUCCESS'});
+						//startSyncOptions();
 					} else {
-						console.log(' ERROR occured : ' + error2);
-					//	callback(true,null);
+						console.log("Error occured on HQ");
+						//callback(true,null);
 					}
-					restockCheck(callback);
 				} else {
-					console.log(' ERROR occured : ' + error2);
-					restockCheck(callback);
+					console.log("Error while pushing to HQ : "+error);
 					//callback(true,null);
+					retryStart(startSyncOptions);
 				}
 			});
 		} else {
-			console.log(' ERROR occured : ' + err2);
-			restockCheck(callback);
+			console.log("Error occured while syncing DISCONTINUED products");
+			console.log("Error : " + err);
 			//callback(true,null);
 		}
-	});
+	});*/
+
 }
-function syncUpdated(callback) {
-	var get_updated = {
-								url : hq_host+'/syncUpdated',
-								json : true,
-								body : { 'outletid' : outletid }
-							};
+function pullInventoryFromHQ() {
+	console.log("Syncing INVENTORY with HQ...");
 
-	console.log('Retrieving updated PRODUCT list..');
+	var pull_options = {
+			probeUrl : '/getInventorySize',
+			length : 2000,
+			dataUrl : '/syncAll',
+			data : {
+				'outletid' : outletid
+			}
+		};
 
-	request.post(get_updated, function(error, response, body) {
-		if(!error) {
+	packet.pull(pull_options, function (err,result) {
+		// body...
+		if(!err) {
+			console.log("Size of Inventory : "+ result.length);
+			console.log('Inventory successfully PULLED FROM HQ');
+			//connection.connect();
+			var list = result,
+				added_query = '',
+				query = '',
+				update_flag = 0,
+				discontinue_flag = 0;
+			if( list !== undefined ) {
+				if( list.length !== 0) {
+					for(var i in list) {
+						var current = list[i];
+						console.log(i);
+						switch(current.status) {
+							case "ADDED" :
+								query += 'INSERT INTO product SELECT '+current.barcode+','+
+									connection.escape(current.name)+','+current.cost_price+','+
+									connection.escape(current.category)+','+current.manufacturer+',\'NORMAL\'' +
+									' FROM DUAL WHERE NOT EXISTS(select * from product where barcode='+current.barcode+'); ';
+								query += "INSERT INTO inventory select "+current.barcode+",0,"+current.selling_price+","+
+									current.min_stock+" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+
+									current.barcode+"); ";
+								break;
+							case "UPDATED" :
+								update_flag = 1; //trigger to check if the the stock of has qualified or disqualified for restock
+								query += 'UPDATE inventory SET min_stock='+current.min_stock+
+								',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
+								break;
+							case "DISCONTINUE":
+								discontinue_flag = 1; //trigger to check if a product has been disqualified
+								query += 'UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=' + current.product_barcode+';';
+								query += 'UPDATE inventory SET min_stock='+current.min_stock+
+								',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
+								break;
 
-			var ms_list = body.ms_list,
-				query = '';
-
-			console.log(ms_list);
-			if(ms_list.length !== 0) {
-				//update min_stock
-				/*
-				{
-					ms_list : [
-						{
-							barcode : "",
-							min_stock : "",
-						},...
-					]
-				}
-				*/
-				for(var i in ms_list) {
-					var current = ms_list[i];
-					query += 'UPDATE inventory SET min_stock='+current['min_stock']+',selling_price='+current['selling_price']+' WHERE barcode=' + current['barcode']+' ;';
-				}
-				connection.query(query, function (err,rows,fields) {
-					if(!err) {
-						console.log(ms_list.length + " PRODUCTS updated successfully");
-					} else {
-						console.log(' ERROR occured : ' + err);
+							default:
+								console.log("This should not have one happened");
+								break;
+						}
 					}
-					syncInventory(callback);
-				});
+
+					if( update_flag || discontinue_flag ) {
+						query += 'DELETE d FROM batch_request b INNER JOIN request_details d on d.date=b.date'+
+							' WHERE b.status=\'ADDED\' AND EXISTS( SELECT * FROM inventory i where i.stock > i.min_stock AND'+
+							' i.barcode=d.barcode ) OR EXISTS( SELECT * FROM product p where p.status=\'DISCONTINUED\' AND '+
+							'p.barcode =d.barcode );';
+						//delete potentially empty request ids
+
+						query += 'DELETE b FROM batch_request b WHERE NOT EXISTS( SELECT * FROM request_details d'+
+							' WHERE d.date=b.date ) AND b.status=\'ADDED\';';
+					}
+					//call query
+					connection.query(query,function (err,rows,fields) {
+						// body...
+						if(!err) {
+							console.log('Retrieval of INVENTORY changes from HQ successful');
+							restockCheck(function (err2,res) {
+								// body...
+								if(!err2) {
+									//syncInventoryAck
+
+									var inventoryAck = {
+										url : hq_host+'/syncInventoryAck',
+										json : true,
+										body : { 'outletid' : outletid }
+									};
+
+									request.post(inventoryAck,function (error2,response2,body2) {
+										// body...
+										if(!error2) {
+											//callback(null,body2);
+											initSyncOptions();
+											restockCheck(function (err3,res3) {
+												// body...
+												if(!err3) {
+													pushTransactions();
+												} else {
+													console.log('Error :' + err3);
+												}
+											});
+										} else {
+											console.log('Error in sending ACK');
+										}
+									});
+								} else {
+									console.log("Error in computing restock");
+									//callback(true,null);
+								}
+							});
+						} else {
+							console.log('ERROR in query : ' + err);
+							//callback(true,null);
+						}
+					});
+				} else {
+					console.log('No change on HQ SIDE');
+					//callback(null,{"STATUS" : "SUCCESS"});
+					initSyncOptions();
+					restockCheck(function (err3,res3) {
+						// body...
+						if(!err3) {
+							pushTransactions();
+						} else {
+							console.log('Error :' + err3);
+						}
+					});
+				}
 			} else {
-				console.log("No products to be UPDATED");
-				syncInventory(callback);
+				console.log('Unable to process the list');
+				//callback(true,null);
+				retry(pullInventoryFromHQ,2);
 			}
 		} else {
-			console.log("ERROR occured : " + error);
-			syncInventory(callback);
+			//console.log(' ERROR occured : ' + error);
+			//restockCheck(callback);
+			retry(pullInventoryFromHQ,2);
 		}
 	});
-}
-function syncDeleted(callback) {
-	var get_deleted = {
-				url : hq_host+'/getDiscontinued',
-				json : true,
-				body : { 'outletid' : outletid }
-			};
-	request.post( get_deleted, function (error, response, body2) {
-		if(!error) {
-			var discontinueList = body2.discontinueList,
-				discontinue_query = '';
-			for (var i in discontinueList) {
-				var current = discontinueList[i];
-				discontinue_query += "UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=" + current.barcode+";";
-			}
-			if(discontinue_query !== '') {
-				connection.query(discontinue_query, function(err,rows,fields) {
-					if(!err) {
-						console.log("DISCONTINUED products successfully synced");
-					} else {
-						console.log("Error occured while syncing DISCONTINUED products");
-						console.log("Error : " + err);
-					}
-					//sync updated products
-					syncUpdated(callback);
-				});
-			} else {
-				console.log("No products to be DISCONTINUED");
-				//sync updated products
-				syncUpdated(callback);
-			}
-		} else {
-			console.log("ERROR : " + error);
-			//sync updated products
-			syncUpdated(callback);
-		}
-	});
+	/*var inventoryRetrievalOptions = {
+							url : hq_host+'/syncAll',
+							json : true,
+							body : { 'outletid' : outletid }
+						};
+
+	request.post(inventoryRetrievalOptions, function(error,response,body) {
+		
+	});*/
 }
 
 function restockCheck (callback) {
@@ -199,179 +343,9 @@ function restockCheck (callback) {
 	});
 }
 
-exports.syncRevenue = function (callback) {
-	// find errors in arguments if any
-	var result = {};
-	if (outletid !== null) {
-		var query = 'SELECT distinct date, SUM(price * total) as revenue FROM sold_yesterday;';
-
-		connection.query(query, function ( err, rows, fields ) {
-			if(!err) {
-				result['date'] = rows[0]['date'];
-				result['revenue'] = rows[0]['revenue'];
-
-				var query_2 = 'SELECT barcode, MAX(price * total) as revenue FROM sold_yesterday GROUP BY barcode;';
-
-				connection.query(query_2, function(err2,rows2,fields2) {
-					if(!err2) {
-						if(rows2.length !== 0) {
-							result['barcode'] = rows2[0]['barcode'];
-							result['outlet_id'] = outletid;
-
-							console.log("Revenue details successfully retrieved");
-							var post_options = {
-									url : hq_host+'/syncRevenue',
-									json : true,
-									body : result
-								};
-
-							console.log("Syncing revenue with HQ...");
-
-							//post sync request to HQ
-							request.post(post_options, function(error, response, body) {
-								if(!error) {
-									if(body['STATUS'] === "SUCCESS") {
-										console.log("Revenue successfully synced with HQ");
-										callback(null,true);
-									} else {
-										console.log(body['STATUS']);
-										callback(true,null);
-									}
-								} else {
-									console.log("Error encountered");
-									console.log("ERROR : " + error);
-									callback(true,null);							}
-							});
-						} else {
-							console.log("Nothing sold yesterday");
-							callback(null,true);
-						}
-						
-					} else {
-						console.log("Error encountered");
-						console.log("ERROR : " + err2);
-						callback(true,null);
-					}
-				});
-			} else {
-				console.log("Error encountered");
-				console.log("ERROR : " + err);
-				callback(true,null);
-			}
-		});
-	} else {
-		console.log("Invalid or absent parameters");
-		callback(true,null);
-	}
-};
-
-exports.syncInventoryAndRestock = function(callback) {
-		//find errors in arguments if any
-		//create http request to hq server
-		/*
-		(need to split 1 and 2?)
-		1. sync inventory
-			a. retrieve added product list for outlet
-			b. add products to list that arent there in both product AND inventory
-			c. place stock requests for new items
-		2. sync stock requests
-			a. check status of past requests
-			b. change ones that are necessary
-		*/
-		var get_added = {
-								url : hq_host+'/getAdded',
-								json : true,
-								body : { 'outletid' : outletid }
-							};
-		
-		console.log('Connecting to HQ Server..');
-		request.post( get_added, function (error, response, body) {
-			if(!error) {
-				console.log("Connected successfully!");
-				var addedList = body.addedList;
-				if(addedList !== null) {
-					console.log("No. of new products : " + addedList.length);
-					var i, flag;
-					var product_query= '',
-						inventory_query = '';
-					for (i=0; i< addedList.length;i++) {
-						var current = addedList[i];
-						product_query += "INSERT INTO product select "+current['barcode']+","+connection.escape(current['name'])+","+current['cost_price']+
-									","+connection.escape(current['category'])+","+connection.escape(current['manufacturer'])+",\'ADDED\'" +
-										" FROM DUAL WHERE NOT EXISTS(select * from product where barcode="+current['barcode']+");";
-						/*if(i==(addedList.length - 1 ))
-							flag = 1;
-
-						callQuery(flag,query,current, outletid);*/
-						inventory_query += "INSERT INTO inventory select "+current['barcode']+",0,"+current['selling_price']+","+current['min_stock']+
-										" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+current['barcode']+");";
-
-					}
-					if(product_query !== '') {
-						connection.query(product_query, function(err,rows,fields) {
-							if(!err) {
-									console.log(rows);
-								connection.query(inventory_query, function(err2,rows2,fields2) {
-
-									if(!err2) {
-										console.log("NEW items successfully synced with HQ");
-									} else {
-										console.log("Error while adding to the INVENTORY table");
-									}
-									syncDeleted(callback);
-								});
-							} else {
-								console.log("Error while adding to the PRODUCT table");
-								console.log("Error : " +err);
-							}
-						});
-					} else {
-						console.log("No NEW products to be synced");
-						syncDeleted(callback);
-					}
-
-				} else {
-					console.log("Unable to retrieve added");
-					syncDeleted(callback);
-				}
-				
-				
-				//now sync all products to be deleted
-			}
-		} );
-		
-};
-
-function updateIncompleteRequests(callback) {
-	var query = "SELECT b.date as date, d.barcode as barcode, d.received as received "+
-			"FROM batch_request b INNER JOIN request_details d "+
-			"ON b.date=d.date WHERE b.status=\'INCOMPLETE\';";
-	console.log("Updating INCOMPLETE requests..");
-	connection.query(query, function(err,rows, fields) {
-		if(!err) {
-			console.log("Posting Sync request to HQ...");
-			request.post({url : hq_host+'/syncIncompleteRequests',json :true, body: {'outletid' : outletid, 'incompleteList' : rows}}, function(error,response,body){
-				if(!error) {
-					if(body.status == "COMPLETED") {
-						console.log("Server sync successful");
-						callback(null,true);
-					}
-				} else {
-					console.log("Unable to sync with HQ\nError : " + error);
-					callback(true,null);
-				}
-			});
-		} else {
-			console.log("Errors in retrieving INCOMPLETE stock requests");
-			console.log("ERROR : " + err);
-			callback(true,null);
-		}
-	});
-
-}
-function updateDispatchedRequests(callback) {
-	console.log("Retrieving DISPATCHED requests from HQ..");
-	request.post( {url : hq_host+'/syncDispatchedRequests',json :true, body: {'outletid' : outletid}}, function(error,response,body) {
+function pullDispatchedRequests() {
+	console.log("Pulling DISPATCHED requests from HQ..");
+	request.post( {url : hq_host+'/pullDispatchedRequests',json :true, body: {'outletid' : outletid}}, function(error,response,body) {
 		if(!error) {
 			if(body['STATUS'] === "SUCCESS") {
 				var dp_list = body.dp_list;
@@ -387,56 +361,38 @@ function updateDispatchedRequests(callback) {
 					connection.query(query, function (err,rows,fields) {
 						if(!err) {
 							console.log("DISPATCHED requests successfully updated");
+							//callback(null,true);
+
+							var remaining = 'SELECT * from batch_request where status=\'SENT\' ;';
+							connection.query(remaining, function (err2,rows2,fields2) {
+								// body...
+								if(!err2) {
+									if(rows2.length === 0) {
+										initSyncOptions();
+										console.log('All Restock Requests Approved!');
+									} else {
+										console.log('Approval of ' + rows2.length + ' restock requests pending');
+										retry(pullDispatchedRequests,1);
+									}
+								}
+							});
 						} else {
 							console.log("ERROR : " + err);
 						}
-						updateIncompleteRequests(callback);
 					});
 				} else {
-					console.log("No requests dispatched from HQ side");
-					updateIncompleteRequests(callback);
+					console.log("No requests approved from HQ side");
+					retry(pullDispatchedRequests,1);
 				}
 			}
 		} else {
 			console.log("ERROR while posting request : " + error);
-			updateIncompleteRequests(callback);
+			retry(pullDispatchedRequests,2);
 		}
 	});
 }
 
-function updateReceivedRequests(callback) {
-	var query = "SELECT DATE(date) as date, status FROM batch_request WHERE status=\'RECEIVED\';";
-	console.log("Updating RECEIVED requests..");
-	connection.query(query, function(err,rows, fields) {
-		if(!err) {
-			console.log("Posting Sync request to HQ...");
-			request.post({url : hq_host+'/syncReceivedRequests',json :true, body: {'outletid' : outletid, 'receivedList' : rows}}, function(error,response,body){
-				if(!error) {
-					if(body.status == "COMPLETED") {
-						console.log("Server sync successful");
-						var query_update = "UPDATE batch_request SET status=\'COMPLETED\' WHERE status=\'RECEIVED\';";
-						connection.query(query_update, function(err2,rows2,fields2) {
-							if(!err2) {
-								console.log("COMPLETED Requests Synced");
-							} else {
-								console.log("Error in updating outletdb requests");
-							}
-							//Final Step
-							updateDispatchedRequests(callback);
-						});
-					}
-				} else {
-					console.log("Unable to sync with HQ\nError : " + error);
-					updateDispatchedRequests(callback);
-				}
-			});
-		} else {
-			console.log("Errors in retrieving RECEIVED stock requests");
-			updateDispatchedRequests(callback);
-		}
-	});
-}
-function syncRequests (callback) {
+function pushNewRequests () {
 	// body...
 	/*
 	involves syncing 3 major components:
@@ -448,40 +404,91 @@ function syncRequests (callback) {
 	var query = "SELECT b.date as date, d.barcode as barcode, d.quantity as quantity " +
 				"FROM batch_request b INNER JOIN request_details d ON b.date=d.date WHERE b.status = \'ADDED\';";
 
+	console.log('Pushing NEW restock requests..');
 	connection.query(query, function(err, rows, fields) {
 		if(!err) {
-			console.log(rows.length);
-			request.post({ url: hq_host+'/syncAddedRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows}}, function(error,response,body) {
-				if(!error) {
-					if( body.status == "ADDED") {
-						var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
-						connection.query(query_update, function(err,rows2,fields2) {
-							if(!err) {
-								console.log("New Requests Synced");
-								//callback(null,true);
-							} else {
-								console.log("Error in updating outletdb requests");
-								//callback(true,null);
-							}
-							//update RECEIVED requests
-							updateReceivedRequests(callback);
-						});
+			console.log("No. of NEW restock requests : " + rows.length);
+			if(rows.length !== 0) {
+				request.post({ url: hq_host+'/pushNewRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows}}, function(error,response,body) {
+					if(!error) {
+						if( body.status == "ADDED") {
+							var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
+							connection.query(query_update, function(err,rows2,fields2) {
+								if(!err) {
+									initSyncOptions();
+									console.log("New Requests Pushed");
+									//callback(null,true);
+
+									//call NEXT FUNCTION
+									pullDispatchedRequests();
+								} else {
+									console.log("Error in updating outletdb requests");
+									//retry(pushNewRequests);
+								}
+								//update RECEIVED requests
+								//updateReceivedRequests(callback);
+							});
+						} else {
+							console.log("Anomaly occured");
+							//retry(pushNewRequests);
+							//updateReceivedRequests(callback);
+						}
 					} else {
-						console.log("Anomaly occured");
-						updateReceivedRequests(callback);
+						console.log("Error in connecting to the server");
+						retry(pushNewRequests,2);
 					}
-				} else {
-					console.log("Error in connecting to the server");
-					callback(true,null);
-				}
-			});
+				});
+			} else {
+				initSyncOptions();
+				console.log('No NEW requests to be PUSHED');
+				//callback(null,true);
+
+				//call NEXT FUNCTION
+				pullDispatchedRequests();
+			}
 		} else {
 			console.log(err);
-			callback(true,null);
+			retry(pushNewRequests,2);
 		}
-		//updateReceivedRequests(callback);
-
 	});
 }
+
+function retry(func_name,stall) {
+	// body...
+	pullInventoryJob.stop();
+	pullTimeOutTries--;
+	if(pullTimeOutTries > 0) {
+		endOfDayOptions.cronTime = '*/'+stall+' * * * *';
+		endOfDayOptions.onTick = func_name;
+		pullInventoryJob = new cronJob(endOfDayOptions);
+		pullInventoryJob.start();
+	} else {
+		initSyncOptions();
+		console.log("TIMEOUT TRIES REACHED. Further operations will be aborted.");
+	}
+}
+
+function retryStart(func_name,stall) {
+	// body...
+	pushInventoryJob.stop();
+	pullTimeOutTries--;
+	if(pullTimeOutTries > 0) {
+		startOfDayOptions.cronTime = '*/'+stall+' * * * *';
+		startOfDayOptions.onTick = func_name;
+		pushInventoryJob = new cronJob(startOfDayOptions);
+		pushInventoryJob.start();
+	} else {
+		startSyncOptions();
+		console.log("TIMEOUT TRIES REACHED. Further operations will be aborted.");
+	}
+}
+
+function endOfDaySync() {
+	console.log("PULLING INVENTORY FROM HQ");
+	pullInventoryFromHQ();
+}
+
+
+
 exports.restockCheck = restockCheck;
-exports.syncRequests = syncRequests;
+exports.syncRequests = pushNewRequests;
