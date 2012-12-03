@@ -24,7 +24,7 @@ startSyncOptions();
 
 function startSyncOptions () {
 	//console.log('WTF!!');
-	if(pushInventoryJob !== undefined)
+	if(pushInventoryJob )
 		pushInventoryJob.stop();
 	startOfDayOptions = {
 						cronTime : '30 6 * * *',
@@ -52,7 +52,7 @@ function startOfDaySync () {
 }
 function initSyncOptions () {
 	//console.log('WTF!!');
-	if(pullInventoryJob !== undefined)
+	if(pullInventoryJob)
 		pullInventoryJob.stop();
 	endOfDayOptions = {
 						cronTime : '30 23 * * *',
@@ -158,7 +158,7 @@ function pullInventoryFromHQ() {
 			query = '',
 			update_flag = 0,
 			discontinue_flag = 0;
-		if( list !== undefined ) {
+		if( list ) {
 			if( list.length !== 0) {
 				for(var i in list) {
 					var current = list[i];

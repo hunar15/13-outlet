@@ -352,7 +352,7 @@ exports.processTransaction = function (req, res) {
 	result['list'] = itemList;
 	var cashier = result['cashier'];
     
-	if (itemList !== null) {
+	if (itemList ) {
 		/*
 		{
 			cashier : "",

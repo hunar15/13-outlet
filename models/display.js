@@ -58,7 +58,7 @@ exports.deleteDisplayUnit = function (args,callback) {
 
 	var display_id = args.display_id;
 
-	if(display_id !== null) {
+	if(display_id ) {
 		var query = "DELETE FROM display where display_id="+display_id+";";
 
 		connection.query(query, function (err,rows,fields) {
@@ -114,7 +114,7 @@ exports.updateDisplayUnit = function  (args,callback) {
 		description = args.description;
 
 
-	if(display_id!==null && barcode!==null) {
+	if(display_id && barcode) {
 		var query = "SELECT display_id from display WHERE barcode="+barcode+";";
 
 		connection.query(query, function (err,rows,fields) {

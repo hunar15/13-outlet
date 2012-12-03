@@ -85,7 +85,7 @@ exports.getPrice = function(args, callback) {
 		barcode = args.barcode,
 		result ={};
 	
-	if(!cashier && !barcode ) {
+	if(cashier && barcode ) {
 		var query = 'SELECT selling_price from inventory WHERE barcode=' + barcode + ' ;';
 		query += 'SELECT name from product WHERE barcode=' + barcode + ';';
 		connection.query(query, function(err, rows, fields) {
@@ -164,7 +164,7 @@ exports.addStock = function (args, callback) {
 	var stock = args.stock,
 		barcode = args.barcode;
 
-	if(!stock && !barcode) {
+	if(stock && barcode) {
 		var query = 'UPDATE inventory set stock=stock+' + stock + ' WHERE barcode='+ barcode+' ;';
 
 		connection.query(query, function(err, rows, fields) {

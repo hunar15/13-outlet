@@ -21,7 +21,7 @@ exports.addTransaction = function (args, callback) {
 	var cashier = args.cashier,
 		itemList = args.list;
 
-	if(cashier !== null  && itemList !== null) {
+	if(cashier   && itemList ) {
 
 		var query = "Select id from transaction where MONTH(date) = MONTH(CURDATE());";
 
@@ -106,7 +106,7 @@ exports.viewTransactionDetails = function (args,callback) {
 	// body...
 	var id = args.id;
 	console.log(id);
-	if(id!==null) {
+	if(id) {
 		var query = 'select barcode,quantity,price from transaction_details where id='+id+' ;';
 		var result = {};
 		result['metadata'] = [];

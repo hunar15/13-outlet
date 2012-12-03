@@ -38,7 +38,7 @@ exports.viewRequestDetails = function  (args,callback) {
 	// body...
 	var date = args.date;
 
-	if(date !== null) {
+	if(date ) {
 		var query = 'select barcode, quantity, received from request_details where date = \''+date+'\';',
 			result ={};
 
@@ -135,7 +135,7 @@ exports.deleteRequest = function (args, callback) {
 		}
 	*/
 	var date = args.date;
-	if(request_id !== null) {
+	if(request_id ) {
 		var query = 'UPDATE batch_request SET status =\'CANCELLED\' WHERE date='+date+';';
 		connection.query( query, function (err, rows, fields) {
 		// body...
@@ -157,7 +157,7 @@ exports.receivedAll = function (args, callback) {
 	// body...
 	var date = args.date;
 
-	if(date !== undefined) {
+	if(date ) {
 		var query = "UPDATE inventory i inner join request_details r on r.barcode=i.barcode set i.stock=i.stock +" +
 						" r.quantity where r.date=\'"+date+"\' AND r.received=0;";
 			query +="UPDATE batch_request SET status=\'COMPLETED\' WHERE date=\'"+date+"\' ;";
@@ -194,7 +194,7 @@ exports.setAsReceived = function(args, callback) {
 		barcode = args.barcode,
 		quantity = args.quantity;
 
-	if(quantity!== undefined && date!==undefined && barcode!==undefined) {
+	if(quantity && date && barcode) {
 		var query = "UPDATE request_details SET received=1 WHERE date=\'"+date+"\' AND barcode="+barcode+" ;";
 		query += "UPDATE batch_request SET status=\'INCOMPLETE\' WHERE date=\'"+date+"\' ;";
 		query += "UPDATE inventory SET stock=stock+"+quantity+" WHERE barcode="+barcode+";";
