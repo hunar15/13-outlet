@@ -21,7 +21,7 @@ function validItem(barcode, quantity){
 	var valid = true;
 	if (barcode == '' || quantity == '')
 		valid = false;
-	if (!parseInt(quantity)){
+	if (!is_int(quantity)){
 		alert('Integers only')
 		valid = false;
 	}
@@ -32,7 +32,13 @@ function validItem(barcode, quantity){
 	return valid;
 
 }
-
+function is_int(value){ 
+	if((parseFloat(value) == parseInt(value)) && !isNaN(value)){
+		return true;
+	} else { 
+		return false;
+	} 
+}
 function initAddItem(){
 
 	$('#add-item').click(function(){

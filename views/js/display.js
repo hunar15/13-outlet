@@ -16,26 +16,43 @@ function initTable(){
 	});
 }
 
+function validPriceDisplay(display_id, barcode, description){
+	if (display_id.length == 0 || barcode.length == 0 || description.length == 0){
+		alert('Invalid: Empty fields');
+		return false;
+	}
+	if (description.length > 40)
+	{
+		alert('Description cannot exceed 40 characters!');
+		return false;
+	}
+	return true;
+}
 
 function initAddDisplay(){
 	$('#confirm-add-display').click(function(){
 		var display_id = $('#inputId').val();
 		var barcode = $('#inputBarcode').val();
 		var description = $('#inputDescription').val();
-		$.ajax({
-			url: "/add/display",
-			type: 'POST',
-			data: {
-				"display_id":display_id,
-				"barcode":barcode,
-				"description":description
-			},
-			success: function (response) {
-				$('#new-display-form')[0].reset();
-				initTable();
-				$('#addNewDisplay').modal('hide');
-			}
-		});
+		if (validPriceDisplay(display_id, barcode, description))
+			$.ajax({
+				url: "/add/display",
+				type: 'POST',
+				data: {
+					"display_id":display_id,
+					"barcode":barcode,
+					"description":description
+				},
+				success: function (response) {
+					alert(response);
+					$('#new-display-form')[0].reset();
+					initTable();
+					$('#addNewDisplay').modal('hide');
+				},
+				error: function (response){
+					alert(response.responseText);
+				}
+			});
 
 	});
 	$.getJSON( "/getBarcodes", function(data){
