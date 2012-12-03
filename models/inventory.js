@@ -95,13 +95,13 @@ exports.getPrice = function(args, callback) {
 				result['barcode'] = barcode;
 				result['price'] = rows[0]['selling_price'];
 				console.log(result);
-				//callback(null,result);
+				callback(null,result);
 			} else {
 				console.log("Error in processing query : " + err);
 				callback(true,null);
 			}
 		});
-		
+		/*
 		var query2 = 'SELECT name from product WHERE barcode=' + barcode + ';';
 		connection.query(query2, function(err, rows, fields) {
 			if(rows[0]) {
@@ -113,7 +113,7 @@ exports.getPrice = function(args, callback) {
 				console.log("Error in processing query : " + err);
 				callback(true,null);
 			}
-		});
+		});*/
 	} else {
 		console.log("Invalid or missing parameters");
 		callback(true,null);
