@@ -44,7 +44,10 @@ function initAddDisplay(){
 					"description":description
 				},
 				success: function (response) {
-					alert(response);
+					if (response.ERROR!=null)
+					{
+						alert('Error adding display: Check duplicate ID or invalid barcode');
+					}
 					$('#new-display-form')[0].reset();
 					initTable();
 					$('#addNewDisplay').modal('hide');
@@ -102,6 +105,10 @@ function initEditDisplay(){
 				"description":description
 			},
 			success: function (response) {
+				if (response.ERROR != null)
+				{
+					alert('Error editing display: Check barcode');
+				}
 				initTable();
 				$('#edit-display').modal('hide');
 			}
