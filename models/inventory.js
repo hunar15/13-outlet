@@ -128,6 +128,7 @@ function recomputeDiscontinuedSellingPrice (callback) {
 	connection.query(query, function(err,rows,fields) {
 		if(!err) {
 			console.log("Selling price of DISCONTINUED products halved");
+			console.log("Prices of Outlet Recomputed");
 			callback(null,true);
 		} else {
 			console.log("Error encountered");
@@ -138,29 +139,15 @@ function recomputeDiscontinuedSellingPrice (callback) {
 }
 exports.recomputeSellingPrice = function(callback) {
 	
-	var select_query = 'SELECT i.barcode AS barcode, FORMAT(GREATEST(1.05* p.cost_price, ( ' +
+	var select_query = 'UPDATE product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
+					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode set i.selling_price=FORMAT(GREATEST(1.05* p.cost_price, ( ' +
 					'IFNULL( s.total, 0 ) * i.selling_price ) / ( 0.9 * i.min_stock ) ' +
-					'),2) AS new_price FROM product p INNER JOIN inventory i ON p.barcode = i.barcode ' +
-					' LEFT JOIN sold_yesterday s ON i.barcode = s.barcode WHERE p.status <> \'ADDED\' AND p.status<>\'DISCONTINUED\';';
+					'),2) WHERE p.status<>\'DISCONTINUED\';';
 
 	connection.query(select_query,function (err, rows, fields) {
 		if(!err) {
-			var update_query = '';
-			for(var i in rows) {
-				var current = rows[i];
-				update_query += 'UPDATE inventory SET selling_price='+current['new_price']+' WHERE barcode='+current['barcode']+';';
-			}
-			connection.query(update_query, function(err2,rows2,fields2) {
-				if(!err2) {
-					console.log("Selling prices of NORMAL PRODUCTS successfully updated");
-				//	callback(null,true);
-				} else {
-					console.log("Error while updating prices");
-					console.log("ERROR : " + err2);
-				//	callback(true,null);
-				}
-				recomputeDiscontinuedSellingPrice(callback);
-			});
+			console.log("Recomputing the prices of Outlet products");
+			recomputeDiscontinuedSellingPrice(callback);
 		} else {
 			console.log("Error encountered");
 			console.log("ERROR : "+err);

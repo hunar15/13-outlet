@@ -131,17 +131,17 @@ exports.updateDisplayUnit = function  (args,callback) {
 						callback(null,rows2);
 					} else {
 						console.log("ERROR : " +err2);
-						callback(true,null);
+						callback({'ERROR' : err2},null);
 					}
 				});
 			} else {
 				console.log("ERROR : " +err);
-				callback(true,null);
+				callback({'ERROR' : err},null);
 			}
 		});
 	} else {
 		console.log("Invalid or absent parameters");
-		callback(true,null);
+		callback({'ERROR' : 'NO PARAMETERS'},null);
 	}
 	
 };
