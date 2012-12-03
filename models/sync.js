@@ -119,55 +119,23 @@ function pushInventoryDetailsToHQ(callback) {
 	// body...
 	var query = 'select barcode,stock,selling_price from inventory;',
 
-		push_options = {
-			'query' : query,
-			'length' : 2000,
-			'url' : '/pushInventoryToHQ',
-			'data' : {
-				'outletid' : outletid
-			}
-		};
+	push_options = {
+		'query' : query,
+		'length' : 2000,
+		'url' : '/pushInventoryToHQ',
+		'data' : {
+			'outletid' : outletid
+		}
+	};
 
-		packet.push(push_options, function (err,result) {
-			// body...
-			if(!err) {
-				console.log('Inventory successfully PUSHED to HQ');
-			} else {
-				console.log("Error occured on HQ");
-			}
-		});
-/*	connection.query(query, function (err,rows,fields) {
+	packet.push(push_options, function (err,result) {
 		// body...
 		if(!err) {
-			var pushToHQ = {
-				url : hq_host+'/pushInventoryToHQ',
-				json : true,
-				body : { 'outletid' : outletid, 'list' : rows }
-			};
-
-			request.post(pushToHQ, function(error,response,body) {
-				if(!error) {
-					if(body['STATUS'] === 'SUCCESS') {
-						console.log('Inventory successfully PUSHED to HQ');
-						//callback(null,{'STATUS' : 'SUCCESS'});
-						//startSyncOptions();
-					} else {
-						console.log("Error occured on HQ");
-						//callback(true,null);
-					}
-				} else {
-					console.log("Error while pushing to HQ : "+error);
-					//callback(true,null);
-					retryStart(startSyncOptions);
-				}
-			});
+			console.log('Inventory successfully PUSHED to HQ');
 		} else {
-			console.log("Error occured while syncing DISCONTINUED products");
-			console.log("Error : " + err);
-			//callback(true,null);
+			console.log("Error occured on HQ");
 		}
-	});*/
-
+	});
 }
 function pullInventoryFromHQ() {
 	console.log("Syncing INVENTORY with HQ...");
@@ -181,125 +149,117 @@ function pullInventoryFromHQ() {
 			}
 		};
 
+	pull_options.packetQuery = function  ( result, callback) {
+		// body...
+		console.log("Size of Inventory : "+ result.length);
+
+		var list = result,
+			added_query = '',
+			query = '',
+			update_flag = 0,
+			discontinue_flag = 0;
+		if( list !== undefined ) {
+			if( list.length !== 0) {
+				for(var i in list) {
+					var current = list[i];
+					switch(current.status) {
+						case "ADDED" :
+							query += 'INSERT INTO product SELECT '+current.barcode+','+
+								connection.escape(current.name)+','+current.cost_price+','+
+								connection.escape(current.category)+','+current.manufacturer+',\'NORMAL\'' +
+								' FROM DUAL WHERE NOT EXISTS(select * from product where barcode='+current.barcode+'); ';
+							query += "INSERT INTO inventory select "+current.barcode+",0,"+current.selling_price+","+
+								current.min_stock+" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+
+								current.barcode+"); ";
+							break;
+						case "UPDATED" :
+							update_flag = 1; //trigger to check if the the stock of has qualified or disqualified for restock
+							query += 'UPDATE inventory SET min_stock='+current.min_stock+
+							',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
+							break;
+						case "DISCONTINUE":
+							discontinue_flag = 1; //trigger to check if a product has been disqualified
+							query += 'UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=' + current.product_barcode+';';
+							query += 'UPDATE inventory SET min_stock='+current.min_stock+
+							',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
+							break;
+
+						default:
+							console.log("This should not have one happened");
+							break;
+					}
+				}
+
+				if( update_flag || discontinue_flag ) {
+					query += 'DELETE d FROM batch_request b INNER JOIN request_details d on d.date=b.date'+
+						' WHERE b.status=\'ADDED\' AND EXISTS( SELECT * FROM inventory i where i.stock > i.min_stock AND'+
+						' i.barcode=d.barcode ) OR EXISTS( SELECT * FROM product p where p.status=\'DISCONTINUED\' AND '+
+						'p.barcode =d.barcode );';
+					//delete potentially empty request ids
+
+					query += 'DELETE b FROM batch_request b WHERE NOT EXISTS( SELECT * FROM request_details d'+
+						' WHERE d.date=b.date ) AND b.status=\'ADDED\';';
+				}
+				//call query
+				connection.query(query,function (err,rows,fields) {
+					// body...
+					if(!err) {
+						console.log('Retrieval of INVENTORY changes from HQ successful');
+						callback(null);
+					} else {
+						console.log('ERROR in query : ' + err);
+						//callback(true,null);
+						callback(true);
+					}
+				});
+			} else {
+				console.log('No change on HQ SIDE');
+				//callback(null,{"STATUS" : "SUCCESS"});
+				callback(null);
+			}
+		} else {
+			console.log('Unable to process the list');
+			//callback(true,null);
+			callback(true);
+		}
+
+	};
 	packet.pull(pull_options, function (err,result) {
 		// body...
 		if(!err) {
-			console.log("Size of Inventory : "+ result.length);
 			console.log('Inventory successfully PULLED FROM HQ');
-			//connection.connect();
-			var list = result,
-				added_query = '',
-				query = '',
-				update_flag = 0,
-				discontinue_flag = 0;
-			if( list !== undefined ) {
-				if( list.length !== 0) {
-					for(var i in list) {
-						var current = list[i];
-						console.log(i);
-						switch(current.status) {
-							case "ADDED" :
-								query += 'INSERT INTO product SELECT '+current.barcode+','+
-									connection.escape(current.name)+','+current.cost_price+','+
-									connection.escape(current.category)+','+current.manufacturer+',\'NORMAL\'' +
-									' FROM DUAL WHERE NOT EXISTS(select * from product where barcode='+current.barcode+'); ';
-								query += "INSERT INTO inventory select "+current.barcode+",0,"+current.selling_price+","+
-									current.min_stock+" FROM DUAL WHERE NOT EXISTS(select * from inventory where barcode="+
-									current.barcode+"); ";
-								break;
-							case "UPDATED" :
-								update_flag = 1; //trigger to check if the the stock of has qualified or disqualified for restock
-								query += 'UPDATE inventory SET min_stock='+current.min_stock+
-								',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
-								break;
-							case "DISCONTINUE":
-								discontinue_flag = 1; //trigger to check if a product has been disqualified
-								query += 'UPDATE product SET status=\'DISCONTINUED\' WHERE barcode=' + current.product_barcode+';';
-								query += 'UPDATE inventory SET min_stock='+current.min_stock+
-								',selling_price='+current.selling_price+' WHERE barcode=' + current.product_barcode+' ;';
-								break;
 
-							default:
-								console.log("This should not have one happened");
-								break;
-						}
-					}
+			restockCheck(function (err2,res) {
+				// body...
+				if(!err2) {
+					//syncInventoryAck
 
-					if( update_flag || discontinue_flag ) {
-						query += 'DELETE d FROM batch_request b INNER JOIN request_details d on d.date=b.date'+
-							' WHERE b.status=\'ADDED\' AND EXISTS( SELECT * FROM inventory i where i.stock > i.min_stock AND'+
-							' i.barcode=d.barcode ) OR EXISTS( SELECT * FROM product p where p.status=\'DISCONTINUED\' AND '+
-							'p.barcode =d.barcode );';
-						//delete potentially empty request ids
+					var inventoryAck = {
+						url : hq_host+'/syncInventoryAck',
+						json : true,
+						body : { 'outletid' : outletid }
+					};
 
-						query += 'DELETE b FROM batch_request b WHERE NOT EXISTS( SELECT * FROM request_details d'+
-							' WHERE d.date=b.date ) AND b.status=\'ADDED\';';
-					}
-					//call query
-					connection.query(query,function (err,rows,fields) {
+					request.post(inventoryAck,function (error2,response2,body2) {
 						// body...
-						if(!err) {
-							console.log('Retrieval of INVENTORY changes from HQ successful');
-							restockCheck(function (err2,res) {
-								// body...
-								if(!err2) {
-									//syncInventoryAck
-
-									var inventoryAck = {
-										url : hq_host+'/syncInventoryAck',
-										json : true,
-										body : { 'outletid' : outletid }
-									};
-
-									request.post(inventoryAck,function (error2,response2,body2) {
-										// body...
-										if(!error2) {
-											//callback(null,body2);
-											initSyncOptions();
-											restockCheck(function (err3,res3) {
-												// body...
-												if(!err3) {
-													pushTransactions();
-												} else {
-													console.log('Error :' + err3);
-												}
-											});
-										} else {
-											console.log('Error in sending ACK');
-										}
-									});
-								} else {
-									console.log("Error in computing restock");
-									//callback(true,null);
-								}
-							});
+						if(!error2) {
+							//callback(null,body2);
+							//callback(null);
+							initSyncOptions();
+							pushTransactions();
 						} else {
-							console.log('ERROR in query : ' + err);
-							//callback(true,null);
+							console.log('Error in sending ACK');
+							//callback(true);
 						}
 					});
 				} else {
-					console.log('No change on HQ SIDE');
-					//callback(null,{"STATUS" : "SUCCESS"});
-					initSyncOptions();
-					restockCheck(function (err3,res3) {
-						// body...
-						if(!err3) {
-							pushTransactions();
-						} else {
-							console.log('Error :' + err3);
-						}
-					});
+					console.log("Error in computing restock");
+					//callback(true,null);
+				
 				}
-			} else {
-				console.log('Unable to process the list');
-				//callback(true,null);
-				retry(pullInventoryFromHQ,2);
-			}
+			});
 		} else {
-			//console.log(' ERROR occured : ' + error);
-			//restockCheck(callback);
-			retry(pullInventoryFromHQ,2);
+			console.log('Error :' + err);
 		}
 	});
 	/*var inventoryRetrievalOptions = {
@@ -403,51 +363,31 @@ function pushNewRequests () {
 	//get all the newly added requests
 	var query = "SELECT b.date as date, d.barcode as barcode, d.quantity as quantity " +
 				"FROM batch_request b INNER JOIN request_details d ON b.date=d.date WHERE b.status = \'ADDED\';";
+	var push_options = {
+		'query' : query,
+		'length' : 2000,
+		'url' : '/pushNewRequests',
+		'data' : {
+			'outletid' : outletid
+		}
+	};
 
-	console.log('Pushing NEW restock requests..');
-	connection.query(query, function(err, rows, fields) {
+	packet.push(push_options, function (err,result) {
+		// body...
 		if(!err) {
-			console.log("No. of NEW restock requests : " + rows.length);
-			if(rows.length !== 0) {
-				request.post({ url: hq_host+'/pushNewRequests',json:true, body :{ 'outletid' : outletid, 'addedList' : rows}}, function(error,response,body) {
-					if(!error) {
-						if( body.status == "ADDED") {
-							var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
-							connection.query(query_update, function(err,rows2,fields2) {
-								if(!err) {
-									initSyncOptions();
-									console.log("New Requests Pushed");
-									//callback(null,true);
-
-									//call NEXT FUNCTION
-									pullDispatchedRequests();
-								} else {
-									console.log("Error in updating outletdb requests");
-									//retry(pushNewRequests);
-								}
-								//update RECEIVED requests
-								//updateReceivedRequests(callback);
-							});
-						} else {
-							console.log("Anomaly occured");
-							//retry(pushNewRequests);
-							//updateReceivedRequests(callback);
-						}
-					} else {
-						console.log("Error in connecting to the server");
-						retry(pushNewRequests,2);
-					}
-				});
-			} else {
-				initSyncOptions();
-				console.log('No NEW requests to be PUSHED');
-				//callback(null,true);
-
-				//call NEXT FUNCTION
-				pullDispatchedRequests();
-			}
+			console.log('Inventory successfully PUSHED to HQ');
+			var query_update = "UPDATE batch_request SET status=\'SENT\' WHERE status=\'ADDED\';";
+			connection.query(query_update, function(err,rows2,fields2) {
+				if(!err) {
+					initSyncOptions();
+					console.log("New Requests Pushed");
+					pullDispatchedRequests();
+				} else {
+					console.log("Error in updating outletdb requests");
+				}
+			});
 		} else {
-			console.log(err);
+			console.log("Error occured on HQ");
 			retry(pushNewRequests,2);
 		}
 	});

@@ -1,5 +1,6 @@
 var request = require('request');
-var config = require('../config/config');
+var config = require('../config/config'),
+	async =require('async');
 
 var connection = config.connection;
 var hq_host = config.hq_host,
@@ -87,31 +88,35 @@ exports.addRequest =  function(args, callback) {
 		console.log("Creating stock requests for required PRODUCTS...");
 		connection.query( query,  function(err, rows, fields) {
 			if(!err) {
-				var errorFlag = 0,
-					query_2 = '';
+				var query_2 = '',
+					i =0;
 				console.log("Request List length : "+ requestList.length);
-				for(var i in requestList) {
-					var current = requestList[i];
-					query_2 += "INSERT INTO request_details SELECT CURDATE()," + current['barcode']+"," + current['quantity']+ ", 0"+
-							" FROM DUAL WHERE NOT EXISTS(SELECT * FROM request_details WHERE date= CURDATE() AND barcode="+current['barcode']+");";
-				}
-				if(query_2 !== '') {
-					//execute multiple queries
-					connection.query(query_2, function (err2, rows2, fields2) {
-						if(!err2) {
-							console.log("Restock request for "+ requestList.length+ " items added");
+				async.forEachSeries(requestList,function (item,async_callback) {
+				// body...
+					i++;
+					query_2 +="INSERT INTO request_details SELECT CURDATE()," + item.barcode+"," + item.quantity+ ", 0"+
+							" FROM DUAL WHERE NOT EXISTS(SELECT * FROM request_details WHERE date= CURDATE() AND barcode="+item.barcode+");";
+					if((i%config.segment_size)===0 || i ==(requestList.length)) {
+						connection.query(query_2, function (err2, rows2, fields2) {
+							if(!err2) {
+								query_2='';
+								async_callback(null);
+							} else {
+								console.log(err2);
+								async_callback(true);
+							}
+						});
+					} else {
+						async_callback(null);
+					}
+				}, function(err){
+						// if any of the saves produced an error, err would equal that error
+						if(err)
+							callback(err,null);
+						else
 							callback(null,true);
-						} else {
-							errorFlag = 1;
-							console.log(err2);
-							callback(true,null);
-						}
-					});
-				} else {
-					console.log("Nothing to RESTOCK");
-					callback(null,true);
-				}
-				
+					}
+				);
 			} else {
 				console.log(err);
 				callback(true,null);

@@ -23,6 +23,7 @@ exports.push = function (args, prime_callback) {
 		length = args.length,
 		url = args.url,
 		data = args.data;
+		//packetQuery = args.packetQuery;
 
 
 	connection.query(query, function (err,rows,fields) {
@@ -32,23 +33,25 @@ exports.push = function (args, prime_callback) {
 				segments = Math.ceil(size/length),
 				post_options = {
 					url : hq_host+url,
-					json : true
+					json : true,
+					body : {}
 				},
 				tmp = [],
 				i=0;
-
+			console.log('Number of segments : '+ segments);
 			async.forEachSeries(rows, function (item,callback) {
 				// body...
 				i++;
-				if((i%length)===0) {
+				if((i%length)===0 || i==length) {
 					post_options.body.data = data;
 					post_options.body.list = tmp;
 					tmp = [];
 					request.post(post_options, function (error,response,body) {
 						// body...
 						if(!error) {
-							if(body.STATUS === 'SUCCESS')
+							if(body.STATUS === 'SUCCESS') {
 								callback(null);
+							}
 							else
 								callback(true);
 						}
@@ -86,7 +89,8 @@ exports.pull = function  (args, prime_callback) {
 	var probeUrl = args.probeUrl,
 		length = args.length,
 		url = args.dataUrl,
-		data = args.data;
+		data = args.data,
+		packetQuery = args.packetQuery;
 
 	var post_options = {
 		url : hq_host+probeUrl,
@@ -122,12 +126,13 @@ exports.pull = function  (args, prime_callback) {
 						if(!error2) {
 							if(body2.STATUS === 'SUCCESS') {
 								i++;
-								console.log('Segment ' + i + 'Received');
-								for(var j in body2.list) {
+								console.log('Segment ' + i + ' Received');
+								/*for(var j in body2.list) {
 									console.log("Number " +(i-1)*length +j+ ' : '+list[(i-1)*length + j]);
 									list.push(body2.list[j]);
 								}
-								callback(null);
+								callback(null);*/
+								packetQuery(body2.list,callback);
 							} else {
 								callback(true);
 							}
@@ -136,11 +141,12 @@ exports.pull = function  (args, prime_callback) {
 				}, function(err){
 					// if any of the saves produced an error, err would equal that error
 					if(!err) {
-						prime_callback(null,list);
+						//prime_callback(null,list);
+						prime_callback(null,true);
 					} else
 						prime_callback(err,null);
 				});
-			} 
+			}
 		} else {
 			prime_callback(error,true);
 		}

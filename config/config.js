@@ -35,4 +35,5 @@ exports.sql = sql;
 exports.connection = connection;
 exports.hq_host = hq_host;
 exports.outletid = outletid;
+exports.segment_size = 2000;
 
