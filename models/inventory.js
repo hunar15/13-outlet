@@ -86,14 +86,16 @@ exports.getPrice = function(args, callback) {
 		result ={};
 	
 	if(cashier!== null && barcode !== null) {
-		var query = 'SELECT selling_price from inventory WHERE barcode=' + barcode + ';';
+		var query = 'SELECT selling_price from inventory WHERE barcode=' + barcode + ' ;';
+		query += 'SELECT name from product WHERE barcode=' + barcode + ';';
 		connection.query(query, function(err, rows, fields) {
 			//if(err === null) {
 			if (rows[0]){
 				console.log("Price of " + barcode + " successfully retrieved");
 				result['cashier'] = cashier;
 				result['barcode'] = barcode;
-				result['price'] = rows[0]['selling_price'];
+				result['price'] = rows[0][0]['selling_price'];
+				result['name'] = rows[1][0]['name'];
 				console.log(result);
 				callback(null,result);
 			} else {
