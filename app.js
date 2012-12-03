@@ -32,6 +32,8 @@ app.get('/', routes.index);
 app.get('/users', user.list);
 
 //sync routes
+app.get('/pushToHQ_inventory',routes.pushToHQ_inventory);
+app.get('/getFromHQ_inventory',routes.getFromHQ_inventory);
 app.get('/syncAtStart', routes.syncAtStart);
 app.get('/syncAtEnd', routes.syncAtEnd);
 app.get('/syncTransactions',routes.syncTransactions);
@@ -60,7 +62,10 @@ app.post('/stock/setAsReceived', routes.setAsReceived);
 app.post('/getPrice', routes.getPrice);
 app.get('/getBarcodes', routes.getBarcodes);
 app.post('/add/transaction', routes.addTransaction);
-app.post('/get/displayDetails',routes.getDisplayDetails);
+app.get('/get/displayDetails',routes.getDisplayDetails);
+
+
+//pushInventoryJob.start();
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));

@@ -15,8 +15,9 @@ var request = require('request'),
 	hq_host = config.hq_host,
 	outletid = config.outletid;
 
-exports.getDisplayDetails = function (req,res) {
-	display.getProductDetails(req.body,function(err,result) {
+exports.pushToHQ_inventory = function (req,res) {
+	// body...
+	sync.pushInventoryDetailsToHQ(function(err,result) {
 		if(!err) {
 			res.send(result);
 		} else {
@@ -25,8 +26,19 @@ exports.getDisplayDetails = function (req,res) {
 	});
 };
 
-exports.syncTransactions = function (req,res) {
-	sync.syncTransactions(function(err,result) {
+exports.getFromHQ_inventory =function (req,res) {
+	// body...
+	sync.getFromHQ_inventory(function(err,result) {
+		if(!err) {
+			res.send(result);
+		} else {
+			res.send(err);
+		}
+	});
+};
+
+exports.getDisplayDetails = function (req,res) {
+	display.getProductDetails(req.body,function(err,result) {
 		if(!err) {
 			res.send(result);
 		} else {
@@ -247,7 +259,7 @@ exports.getBarcodes = function (req, res) {
 			res.send(result);
 		}
 	});
-}
+};
 
 exports.syncAtEnd = function (req, res) {
 	var query = 'UPDATE product set status=\'NORMAL\' where status=\'ADDED\';';
@@ -293,6 +305,42 @@ exports.syncAtStart = function (req,res) {
 	});
 };
 
+function validateTransaction(list, callback) {
+	var validation_query = '';
+
+	for(var i in list) {
+		var current = list[i];
+		validation_query += 'select stock-'+current.quantity+' as quantity from inventory WHERE barcode='+current.barcode+';';
+	}
+
+	connection.query(validation_query, function(err,rows,fields) {
+		if(!err) {
+			if(rows.length == 1) {
+				if(rows[0].quantity < 0) {
+					callback(false);
+				} else {
+					callback(true);
+				}
+					
+			} else {
+				var flag =0;
+				for(var i in rows) {
+					if(rows[i][0].quantity < 0) {
+						flag=1;
+						break;
+					}
+				}
+				if(flag)
+					callback(false);
+				else
+					callback(true);
+			}
+		} else {
+
+		}
+	});
+}
+
 exports.processTransaction = function (req, res) {
 	// body...
 	t_errorFlag =0;
@@ -315,44 +363,53 @@ exports.processTransaction = function (req, res) {
 			}]
 		}
 		*/
-		var updateStockQuery ='';
-            console.log(itemList);
-		for (var i in itemList) {
-			var current = itemList[i];
-                    console.log(itemList[i]);
-			updateStockQuery += "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'] +" WHERE barcode=" + itemList[i]['barcode'] +" ;";
-			//callTransactionQuery(query,current,cashier);
-		}
-		connection.query(updateStockQuery, function(err,rows,fields) {
-			if(!err) {
-				console.log("Bill processed without errors");
-				result['errors'] = false;
-				//carry out product stock request check
-				
-				//add to transaction table
-				transaction.addTransaction(result, function (err3, res3) {
-					if(!err3) {
-						console.log("TRANSACTION successfully completed");
-						console.log("Computing RESTOCK check ...");
-						sync.restockCheck(function(err,result) {
-							if(!err) {
-								res.send({"STATUS" : "SUCCESS"});
+		validateTransaction(itemList, function(isValid) {
+			// body...
+			if(isValid) {
+				var updateStockQuery ='';
+				console.log(itemList);
+				for (var i in itemList) {
+					var current = itemList[i];
+					console.log(itemList[i]);
+					updateStockQuery += "UPDATE inventory SET stock= stock -" +itemList[i]['quantity'] +" WHERE barcode=" + itemList[i]['barcode'] +" ;";
+					//callTransactionQuery(query,current,cashier);
+				}
+				connection.query(updateStockQuery, function(err,rows,fields) {
+					if(!err) {
+						console.log("Bill processed without errors");
+						result['errors'] = false;
+						//carry out product stock request check
+						
+						//add to transaction table
+						transaction.addTransaction(result, function (err3, res3) {
+							if(!err3) {
+								console.log("TRANSACTION successfully completed");
+								console.log("Computing RESTOCK check ...");
+								sync.restockCheck(function(err,result) {
+									if(!err) {
+										res.send({"STATUS" : "SUCCESS"});
+									} else {
+										res.send({"STATUS" : "ERROR"});
+									}
+								});
 							} else {
-								res.send({"STATUS" : "ERROR"});
+								console.log(err3);
+								res.send({ "STATUS" : "ERROR"});
 							}
 						});
+								
 					} else {
-						console.log(err3);
+						console.log("Bill processed with errors");
+						console.log(err);
 						res.send({ "STATUS" : "ERROR"});
 					}
 				});
-						
 			} else {
-				console.log("Bill processed with errors");
-				console.log(err);
+				console.log("Invalid transaction list. Aborting request...");
 				res.send({ "STATUS" : "ERROR"});
 			}
 		});
+		
 		//res.send(result);
 	} else {
 		console.log("Absent parameters");
