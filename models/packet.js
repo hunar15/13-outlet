@@ -42,14 +42,16 @@ exports.push = function (args, prime_callback) {
 			async.forEachSeries(rows, function (item,callback) {
 				// body...
 				i++;
+				tmp.push(rows[i-1]);
 				if((i%length)===0 || i==length) {
 					post_options.body.data = data;
 					post_options.body.list = tmp;
-					tmp = [];
+					
 					request.post(post_options, function (error,response,body) {
 						// body...
 						if(!error) {
 							if(body.STATUS === 'SUCCESS') {
+								tmp = [];
 								callback(null);
 							}
 							else
